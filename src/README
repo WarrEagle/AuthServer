@@ -1,0 +1,8 @@
+Requirements:
+Debian/ubuntu packages:
+libxml2-dev
+nodejs >=v8
+npm
+
+npm packages:
+forever startup script monitor

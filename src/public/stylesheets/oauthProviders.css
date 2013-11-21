@@ -1,0 +1,30 @@
+#oauthProvidersHeader {
+        margin: 0px 0 15px;
+}
+
+.content {
+        width: 80%;
+        margin: 50px auto;
+        border: 1px solid rgba(116, 110, 110, 0.19);
+        overflow: auto;
+        border-radius: 3px;
+        box-shadow: 1px 1px 7px -4px rgba(5, 5, 5, 0.82);
+}
+
+#providers {
+        width: 100%;
+}
+
+.provider {
+        float: left;
+        margin: 0 0 0 0;
+}
+.provider:last-child:after {
+        content: '';
+        margin: 0;
+}
+.provider:after {
+        content: '(OR)';
+        margin: 0 5px;
+        font-weight: bold;
+}

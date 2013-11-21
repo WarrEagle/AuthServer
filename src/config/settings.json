@@ -1,0 +1,110 @@
+{
+  "development": {
+    "app": {
+      "hostname": "http://auth.friend-manager.com",
+      "db": "mongodb://localhost/kickassdev",
+      "logging": {
+        "loggers": {
+          "console": {}
+        },          
+        "level": "debug",
+        "enabled": ["console"],
+        "accessLogs": true,
+        "serverId": "development"
+      },
+      "email": "michaelquale+kauth@gmail.com" 
+    },
+    "google": {
+      "host": "checkout.google.com",
+      "merchant_id": "973944726093027",
+      "merchant_key": "2ljzk3I_ojhpPY2GJ3M9kA",
+      "api_path": "/api/checkout/v2/",
+      "appId": "957844751549-tbud87d9jgu9dam9at6fslt6mii52b7c.apps.googleusercontent.com",
+      "appSecret": "yoMiBYPN9tD9zajne0S-_mUa",
+      "callbackURI": "http://auth.friend-manager.com/auth/google/callback",
+      "returnURL": "http://auth.friend-manager.com/auth/google/callback",
+      "realm": "http://auth.friend-manager.com/"
+    },
+    "facebook": {
+      "appId": "102524159894085",
+      "appSecret": "efde85423fb4060b3478db1f4c65dbe2",
+      "callbackURI": "http://auth.friend-manager.com/auth/facebook/callback"
+    },
+    "paypal": {
+    	"api": {
+	    	"host" : "api.sandbox.paypal.com",
+				"port" : "",
+				"client_id" : "Aa4H9xCNt2YUEJSSeeh1lHx-AcgZzpt7HnZYg-4CzAAb1ZORltvoM4NfZUH0",
+				"client_secret" : "EI_YjBBCrfD8RIBgX0RT9MYEBqNk7gfi5Y14QXFtHzNkuSiO48FgyNUb7TgD"
+    	},
+		"intent": "sale",
+		"method": "paypal",
+		"currency": "USD",
+		"host": "auth.friend-manager.com",
+		"port": "80",
+		"returnPath": "paypalSuccess",
+		"cancelPath": "payment/gateways"
+    },
+    "paymentOptions": [{
+			"name": "google"
+			, "buttonURL": "https://checkout.google.com/buttons/checkout.gif?merchant_id=275420252953179&w=180&h=46&style=white&variant=text&loc=en_US"
+		}, {
+			"name": "paypal"
+			, "buttonURL": "https://www.paypal.com/en_US/i/btn/btn_xpressCheckout.gif"
+		}]
+  },
+  "production": {
+    "app": {
+      "hostname": "http://auth.friend-manager.com",
+      "db": "mongodb://localhost/kickass",
+      "logging": {
+        "loggers": {
+          "console": {}
+        },          
+        "level": "info",
+        "enabled": ["console"],
+        "accessLogs": false,
+        "serverId": "production"
+      },
+      "email": "michaelquale+kauth@gmail.com" 
+    },
+    "google": {
+      "host": "checkout.google.com",
+      "merchant_id": "275420252953179",
+      "merchant_key": "3Y9nnOPsjCIwA4gDjyrCMg",
+      "api_path": "/api/checkout/v2/",
+      "appId": "957844751549-uiqtfpuoa5415p5ups8pldp19vp72spf.apps.googleusercontent.com",
+      "appSecret": "BJvKbKl2TdVY63HTcqyvODCR",
+      "callbackURI": "http://auth.friend-manager.com/auth/google/callback",
+      "returnURL": "http://auth.friend-manager.com/auth/google/callback",
+      "realm": "http://auth.friend-manager.com/"
+    },
+    "facebook": {
+      "appId": "102524159894085",
+      "appSecret": "efde85423fb4060b3478db1f4c65dbe2",
+      "callbackURI": "http://auth.friend-manager.com/auth/facebook/callback"
+    },
+    "paypal": {
+    	"api": {
+	    	"host" : "api.paypal.com",
+				"port" : "",
+				"client_id" : "AfoM1xC9D01RD8dqhbIAHVhrSTbTqDZSt21XGy-5Ez2XQDq_dbEwjqWC3L-5",
+				"client_secret" : "EB5gRBBE7ebjvitv3EmRkhPjVc2ZvJL8B9A2Odh5oQtFKqsMs-dZLPOX0Vfe"
+    	},
+		"intent": "sale",
+		"method": "paypal",
+		"currency": "USD",
+		"host": "auth.friend-manager.com",
+		"port": "80",
+		"returnPath": "paypalSuccess",
+		"cancelPath": "payment/gateways"
+    },
+    "paymentOptions": [{
+			"name": "google"
+			, "buttonURL": "https://checkout.google.com/buttons/checkout.gif?merchant_id=275420252953179&w=180&h=46&style=white&variant=text&loc=en_US"
+		}, {
+			"name": "paypal"
+			, "buttonURL": "https://www.paypal.com/en_US/i/btn/btn_xpressCheckout.gif"
+		}]
+  }
+}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<html xmlns:fb="http://ogp.me/ns/fb#">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="The revolutionary new site that allows Facebook users a slick interface for managing their friend list, events and groups.">
+<meta name="author" content="Friend Manager">
+<link rel="shortcut icon" href="favicon.ico">
+<title>Facebook Friend Manager</title>
+<link rel="stylesheet" href="css/reset.css" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/filters.css" />
+<script data-main="js/main" src="js/require.js"></script>
+
+</head>
+<body>
+
+<div id="fb-root"></div>
+
+<div id="mask"><div id="progress"><img src="img/loading.gif" alt=""><span>1/10</span></div></div>
+
+<div id="confirm" title='Warning! Delete selected lists?'>
+    <p>These lists will be permanently deleted and cannot be recovered. Are you absolutely sure ?</p>
+</div>
+
+<div id="wrap">
+
+	<div id="displayingList">
+		<h2><img src="img/header_displayinglist.png" alt="Displaying List"></h2>
+		<ul></ul>
+	</div>
+
+	<div id="targetFriends">
+		<h2><img src="img/header_targetfriends.png" alt="Target Friends"></h2>
+		<h3 class="inline">Filters: </h3>
+		<div class="inline" id='filtersContainer'>
+			<a href='#filter-gender-male' id='maleFilter' class='filter'>Male</a>
+			<a href='#filter-gender-female' id='femaleFilter' class='filter'>Female</a>
+			<div class="inline" id='locationsFilterHolder'>
+				<h1 class="inline">Locations</h1>
+				<div class='filters inline'>
+					
+				</div>
+			</div>
+			<div id='activeFiltersContainer'>
+				<h3 class="inline">Active Filters: </h3>
+				<div class="inline" id='activeFilters'>
+				</div>
+			</div>
+			<a href='#filter-default' id='defaultFilter' class='filter'>Reset</a>
+		</div>
+		<ul>
+			
+		</ul>
+	</div>
+
+	<div id="targetList">
+		<h2><img src="img/header_targetlist.png" alt="Target lists"></h2>
+		<ul></ul>
+		<div id="createListButton"><input type="text" /><img src="img/btn_create.png" alt="Create List Button"></div>
+		<div id="deleteListButton"><img src="img/btn_delete.png" alt="Delete List Button"></div>
+	</div>
+
+	<div id="action">
+		<h2><img src="img/header_action.png" alt="Actions"></h2>
+			<ul>
+				<li id="addToListButton"><img src="img/btn_add.png" alt="Add To List Button"></li>
+				<li id="removeFromListButton"><img src="img/btn_remove.png" alt="Remove From List Button"></li>
+			</ul>
+	</div>
+</div>
+
+<div id="join"><a href="javascript:void(0);"> </a></div>
+
+</body>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-42859587-1']);
+  _gaq.push(['_setDomainName', 'friend-manager.com']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+</html>

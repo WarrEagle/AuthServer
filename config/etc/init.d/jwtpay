@@ -1,0 +1,29 @@
+#!/bin/bash
+
+NAME="jwtpay"
+DESC="jwtpay server via forever"
+JWTPAY=/opt/kickass
+
+do_start() {
+	echo "Starting $DESC"
+	export NODE_ENV=production
+	forever /opt/kickass/src/jwtpay.js >> /opt/kickass/log/jwtpay/jwtpay.log 2>&1 &
+}
+
+
+
+
+
+cd $JWTPAY/src
+case "$1" in
+	start)
+		do_start
+		;;
+	restart)
+		su -c 'forever stop 0'
+		do_start
+		;;
+	stop)
+		su -c 'forever stop 0'
+		;;
+esac

@@ -1,0 +1,1 @@
+To restore mongodb databases do 'tar -xzf mongodb.tar.gz && mongorestore ./mongodb/

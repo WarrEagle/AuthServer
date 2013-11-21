@@ -1,0 +1,42 @@
+{
+  "author": "Michael Quale",
+  "name": "jwtpay",
+  "description": "Mongoose-Express-Handlebars Basic Application Template",
+  "version": "0.9.0",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": "~0.8.8"
+  },
+  "dependencies": {
+    "ansi-color":         "0.2.1",
+    "connect-redis":      ">=1.2.0",
+    "express":            ">=2.5.8",
+    "express-validator":  ">=0.1.3",
+    "hbs":                "~1.0.1",
+    "jade":               "",
+    "jwt-simple":         ">=0.1.0",
+    "libxml-to-js":       ">=0.3.10",
+    "JSONSelect":         ">=0.4.0",
+    "mongoose":           "2.x",
+    "mongoose-auth":      "git://github.com/nleush/mongoose-auth.git",
+    "nib":                ">=0.3.2",
+    "nodemailer":         ">=0.3.20",
+    "redis":              ">=0.7.1",
+    "restler":            ">=2.0.1",
+    "step":               ">=0.0.5",
+    "stylus":             ">=0.24.0",
+    "underscore":         ">=1.3.1",
+    "passport":           "*",
+    "passport-google-oauth": "*",
+    "passport-google": "*",
+    "passport-facebook": "*",
+    "async": "*",
+    "paypal-rest-sdk": "*",
+    "connect": "*"
+  },
+  "devDependencies": {},
+  "optionalDependencies": {}
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<checkout-shopping-cart xmlns="http://checkout.google.com/schema/2">
+  <shopping-cart>
+    <merchant-private-data>
+      <appId>{{app._id}}</appId>
+      <purchaseKey>{{purchaseKey}}</purchaseKey>
+      <userId>{{userId}}</userId>
+      <googleId>{{googleId}}</googleId>
+    </merchant-private-data>
+    <items>
+      <item>
+        <item-name>{{app.name}}</item-name>
+        <item-description>{{app.description}}</item-description>
+        <unit-price currency="{{app.currency_code}}">{{app.price}}</unit-price>
+        <quantity>1</quantity>
+        <digital-content>
+          <display-disposition>OPTIMISTIC</display-disposition>
+          <description>{{app.purchaseMsg}}</description>
+        </digital-content>
+        <merchant-private-item-data>
+          <merchant-note>1</merchant-note>
+        </merchant-private-item-data>
+      </item>
+    </items>
+  </shopping-cart>
+</checkout-shopping-cart>
