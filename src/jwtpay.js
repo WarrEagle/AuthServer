@@ -42,12 +42,13 @@ var paymentGateways = {
 var transport = nodemailer.createTransport(
   'SMTP', 
   {
-    host: 'kickasschromeapps.com',
-    secureConnection: true,
-    port: 465,
+    service: 'Gmail',
+    //host: 'kickasschromeapps.com',	
+    //secureConnection: true,
+    //port: 587 ,
     auth: {
-      user: 'postman@kickasschromeapps.com',
-      pass: 'getin2it'
+      user: 'michaelquale@gmail.com',
+      pass: 'mike0726'
     }
   }
 );

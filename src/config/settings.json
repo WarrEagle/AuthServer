@@ -70,8 +70,8 @@
     },
     "google": {
       "host": "checkout.google.com",
-      "merchant_id": "275420252953179",
-      "merchant_key": "3Y9nnOPsjCIwA4gDjyrCMg",
+      "merchant_id": "00505787471191315094",
+      "merchant_key": "2ljzk3I_ojhpPY2GJ3M9kA",
       "api_path": "/api/checkout/v2/",
       "appId": "957844751549-uiqtfpuoa5415p5ups8pldp19vp72spf.apps.googleusercontent.com",
       "appSecret": "BJvKbKl2TdVY63HTcqyvODCR",
