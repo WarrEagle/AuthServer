@@ -1,11 +1,4 @@
 var util = require('util');
-var color = require('ansi-color').set;
-var colorFromLevel = {
-  info: 'yellow',
-  debug: 'blue',
-  error: 'red',
-  fatal: 'red_bg+white'
-};
 
 exports.create = function (options) {
   return {
@@ -19,7 +12,7 @@ exports.create = function (options) {
         msg += '\n' + tokens.data;
       }
 
-      util.error(color(msg, colorFromLevel[tokens.level.toLowerCase()]));
+      util.error(msg);
     },
 
     // Used for Express logger
