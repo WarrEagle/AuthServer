@@ -13,10 +13,10 @@ exports.create = function (options) {
   }
 
   function getDateParts() {
-    var dateParts = Moment().tz('America/New_York').format();
+    var dateParts = Moment().tz('America/New_York').format().replace('Z', '').split('T');
     return {
-      date: dateParts,
-      time: dateParts
+      date: dateParts[0],
+      time: dateParts[1]
     };
   }
 
