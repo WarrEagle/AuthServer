@@ -135,11 +135,16 @@ app.get('/', function (req, res) {
 }); 
 
 app.get('/postauth', function (req, res) {
+  if(typeof(req.session.passport.user) !== 'undefined'){
 	app.logger.info('Saved email: ' + req.session.passport.user.email);
 	//console.log('req.session.passport.user: %s', JSON.stringify(req.session.passport.user, null, 2));
 	//console.log('req.user: %s', JSON.stringify(req.user, null, 2));
 	//console.log('SESSION INSPECTION AT POST AUTH: %s', JSON.stringify(req.session, null, 2));
-  res.redirect('/buy/' + req.session.appId + '?purchaseKey=' + req.session.purchaseKey);
+    res.redirect('/buy/' + req.session.appId + '?purchaseKey=' + req.session.purchaseKey);
+
+  }else{
+    res.redirect('/auth/providers');
+  }
 });
 
 // Necessary passport helper function to serialize users
