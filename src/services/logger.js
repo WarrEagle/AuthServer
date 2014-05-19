@@ -12,7 +12,7 @@ exports.create = function (options) {
   }
 
   function getDateParts() {
-    var dateParts = new Date().setTimeZone('US/Eastern').toISOString().replace('Z', '').split('T');
+    var dateParts = new Date().toISOString().replace('Z', '').split('T');
     return {
       date: dateParts[0],
       time: dateParts[1]
