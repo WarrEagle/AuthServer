@@ -47,8 +47,8 @@ var transport = nodemailer.createTransport(
     //secureConnection: true,
     //port: 587 ,
     auth: {
-      user: 'michaelquale@gmail.com',
-      pass: 'mike0726'
+      user: 'misoquale@gmail.com',
+      pass: '67life4me'
     }
   }
 );
@@ -136,9 +136,9 @@ app.get('/', function (req, res) {
 
 app.get('/postauth', function (req, res) {
 	app.logger.info('Saved email: ' + req.session.passport.user.email);
-	console.log('req.session.passport.user: %s', JSON.stringify(req.session.passport.user, null, 2));
-	console.log('req.user: %s', JSON.stringify(req.user, null, 2));
-	console.log('SESSION INSPECTION AT POST AUTH: %s', JSON.stringify(req.session, null, 2));
+	//console.log('req.session.passport.user: %s', JSON.stringify(req.session.passport.user, null, 2));
+	//console.log('req.user: %s', JSON.stringify(req.user, null, 2));
+	//console.log('SESSION INSPECTION AT POST AUTH: %s', JSON.stringify(req.session, null, 2));
   res.redirect('/buy/' + req.session.appId + '?purchaseKey=' + req.session.purchaseKey);
 });
 
@@ -207,7 +207,6 @@ passport.use(new GoogleStrategy({
 		if (profile.emails.length) {
 			newUserEmail = profile.emails[0].value;
 		}
-
 		getUser(newUserEmail, 'google', profile.id, function(err, user) {
 			if (err) {
 				return done(err);
@@ -233,10 +232,14 @@ passport.use(new FacebookStrategy({
 	callbackURL : settings.facebook.callbackURI
 }, function(accessToken, refreshToken, profile, done) {
 	var newUserEmail = "";
-	if (profile.emails.length) {
-		newUserEmail = profile.emails[0].value;
+	if(typeof(profile.emails)!=='undefined'){
+		if (profile.emails.length) {
+			newUserEmail = profile.emails[0].value;
 	}
-
+	}
+	else {
+		newUserEmail = profile.id;
+	}
 	getUser(newUserEmail, 'facebook', profile.id, function(err, user) {
 		if (err) {
 			return done(err);
@@ -275,7 +278,7 @@ app.get('/auth/facebook/callback',
 });
 
 app.get('/auth/providers', function(req, res) {
-	console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
+	//console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
 	res.render('oauthProviders', {
 		providers: [{
 			name: 'google'

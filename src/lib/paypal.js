@@ -37,7 +37,7 @@ exports.create = function(email, orderId, app, cb) {
 			'description' : app.description
 		}]
 	};
-	console.log(paypalPayment);
+	//console.log(paypalPayment);
 
 	paypal.payment.create(paypalPayment, {}, function(err, resp) {
 		
@@ -50,7 +50,7 @@ exports.create = function(email, orderId, app, cb) {
 				}]
 			});
 		}
-		console.log('PAYPAL CREATE RESP: %s', JSON.stringify(resp, null, 2));
+		//console.log('PAYPAL CREATE RESP: %s', JSON.stringify(resp, null, 2));
 		var now = (new Date()).toISOString().replace(/\.[\d]{3}Z$/, 'Z ')
 		, order = {
 			orderId: orderId
@@ -79,7 +79,7 @@ exports.create = function(email, orderId, app, cb) {
 };
 
 exports.execute = function(paymentId, payerId, cb) {
-	console.log(paymentId, {payer_id: payerId});
+	//console.log(paymentId, {payer_id: payerId});
 	paypal.payment.execute(paymentId, {payer_id: payerId}, {}, function(err, resp) {
 		if (err) {
 			console.log(err);
@@ -90,7 +90,7 @@ exports.execute = function(paymentId, payerId, cb) {
 				}]
 			});
 		}
-		console.log('PAYPAL EXECUTE RESP: %s', JSON.stringify(resp, null, 2));
+		//console.log('PAYPAL EXECUTE RESP: %s', JSON.stringify(resp, null, 2));
 		var transaction = resp.transactions[0]
 		, t = {
 			id: resp.id
