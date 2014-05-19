@@ -1,4 +1,5 @@
 var _ = require('underscore');
+var Moment = require('moment-timezone');
 
 exports.create = function (options) {
   // var loggers = [console];
@@ -12,10 +13,10 @@ exports.create = function (options) {
   }
 
   function getDateParts() {
-    var dateParts = new Date().toISOString().replace('Z', '').split('T');
+    var dateParts = Moment().tz('America/New_York').format();
     return {
-      date: dateParts[0],
-      time: dateParts[1]
+      date: dateParts,
+      time: dateParts
     };
   }
 

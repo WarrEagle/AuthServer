@@ -34,7 +34,8 @@
     "passport-facebook": "*",
     "async": "*",
     "paypal-rest-sdk": "*",
-    "connect": "*"
+    "connect": "*",
+    "moment-timezone": "*" 
   },
   "devDependencies": {},
   "optionalDependencies": {}
