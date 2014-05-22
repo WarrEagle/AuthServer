@@ -236,6 +236,7 @@ passport.use(new FacebookStrategy({
 	clientSecret : settings.facebook.appSecret,
 	callbackURL : settings.facebook.callbackURI
 }, function(accessToken, refreshToken, profile, done) {
+	done(null, profile);
 	var newUserEmail = "";
 	if(typeof(profile.emails)!=='undefined'){
 		if (profile.emails.length) {
