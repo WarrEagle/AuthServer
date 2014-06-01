@@ -497,7 +497,8 @@ app.get('/payment/gateways', function(req, res) {
 app.get('/purchase/check/:key', function (req, res) {
   Purchase
     .findOne({
-      purchaseKey: req.params.key
+      purchaseKey: req.params.key,
+      status: 'COMPLETE'
     })
     .populate('app')
     .exec(function (err, purchase) {
@@ -563,6 +564,29 @@ function markPurchaseAsComplete(token) {
 			text : JSON.stringify(purchase)
 		});
 		app.logger.info('NEW ORDER COMPLETE', token); 
+    
+    // Find all pending orders and remove them
+    Purchase.find({
+      purchaseKey:  purchase.purchaseKey,
+      status:       'PENDING'
+    }).populate('app').exec(function(err, list) {
+      if (err) {
+        app.logger.error('Could not fetch purchase:', err);
+        return;
+      }
+      
+      // No pending orders found then return
+      ìf (!list || list.length === 0)
+        return;
+      
+      // Remove pending orders
+      for (var i = 0; i < list.length; i = i+1;) {
+        list[i].remove();
+      }
+      
+      app.logger.info('Removed ' + list.length + ' PENDING Orders for User-PurchaseKey: ' + purchase.purchaseKey);
+    });
+
 	});
 }
 
