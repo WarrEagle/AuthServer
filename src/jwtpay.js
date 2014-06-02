@@ -576,17 +576,17 @@ function markPurchaseAsComplete(token) {
       }
       
       // No pending orders found then return
-      ìf (!list || list.length === 0)
+      if (!list || list.length === 0)
         return;
       
       // Remove pending orders
-      var i = 0;
-      for (i = 0; i < list.length;) {
+      var i = 0, len = list.length;
+      for (i = 0; i < len;) {
         list[i].remove();
         i = i + 1;
       }
       
-      app.logger.info('Removed ' + list.length + ' PENDING Orders for User-PurchaseKey: ' + purchase.purchaseKey);
+      app.logger.info('Removed ' + len + ' PENDING Orders for User-PurchaseKey: ' + purchase.purchaseKey);
     });
 
 	});
