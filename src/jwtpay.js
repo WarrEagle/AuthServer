@@ -580,8 +580,10 @@ function markPurchaseAsComplete(token) {
         return;
       
       // Remove pending orders
-      for (var i = 0; i < list.length; i = i+1;) {
+      var i = 0;
+      for (i = 0; i < list.length;) {
         list[i].remove();
+        i = i + 1;
       }
       
       app.logger.info('Removed ' + list.length + ' PENDING Orders for User-PurchaseKey: ' + purchase.purchaseKey);
