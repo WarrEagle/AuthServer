@@ -2,7 +2,7 @@
   "development": {
     "app": {
       "hostname": "http://auth2.friend-manager.com",
-      "db": "mongodb://localhost/kickassdev",
+      "db": "mongodb://localhost:27072/kickassdev",
       "logging": {
         "loggers": {
           "console": {}
