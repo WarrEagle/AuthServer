@@ -16,11 +16,57 @@ appSchema.add({
     title:       String,
     body:        String
   },
+  shareMsg: {
+    caption: String,
+    link: String,
+    message: String
+  },
+  shareResultsMsg: {
+    caption: String,
+    link: String,
+    message: String
+  },
+  gamifyMsg: {
+    message: String
+  },
   includes:      {}
 });
 
 module.exports = App = mongoose.model('App', appSchema);
 /*
+var fbApp = new App({
+  "language" : "English",
+  "name" : "Facebook Friend Remover PRO",
+  "description" : "Delele all friends in one click",
+  "purchaseMsg" : "Congratulations! Your application has been updated and the extension will now work in premium mode.",
+  "currency_code" : "USD",
+  "price" : 3.99,
+  "revalMsg" : {
+    "title" : "Successfully revalidated Facebook Friend Remover PRO",
+    "body" : "Close this window to return to the app and try tool again."
+  },
+  "shareMsg": {
+    "caption": "Friend Remover PRO",
+    "link": "http://friend-manager.com/",
+    "message": "DISPLAY_NAME is using Facebook Friend Remover. The only app that lets you remove your friends quick and easy. Get your copy today!"
+  },
+  "shareResultsMsg": {
+    "caption": "Friend Remover PRO",
+    "link": "GAME_IMAGE",
+    "message": "DISPLAY_NAME just deleted NUMBER friends using Facebook Friend Remover available for Chrome users. He has achieved the GAME_LEVEL award."
+  },
+  "gamifyMsg": {
+    "message": "Your Killer Level: GAME_LEVEL"
+  },
+  "includes" : {
+    "full" : ""
+  }
+});
+
+fbApp.save(function(err, saved) {
+  console.log(saved);
+});
+
 var fbApp = new App({
   "language" : "English",
   "name" : "Facebook Invite All Friends PRO",

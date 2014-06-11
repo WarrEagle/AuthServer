@@ -11,7 +11,6 @@
     "node": "~0.8.8"
   },
   "dependencies": {
-    "connect-redis":      ">=1.2.0",
     "express":            "3.2.0",
     "express-validator":  "0.3.2",
     "hbs":                "~1.0.1",
@@ -35,7 +34,9 @@
     "async": "*",
     "paypal-rest-sdk": "*",
     "connect": "*",
-    "moment-timezone": "*" 
+    "moment-timezone": "*",
+    "connect-redis": "1.4.7",
+    "fb": "*"
   },
   "devDependencies": {},
   "optionalDependencies": {}
