@@ -933,7 +933,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
           if(err || !updatedUser) {
             return res.send({success: false});
           }
-          return res.send({success: true, deletes: total, picture: game.img, message: msg.gamifyMsg, sharemsg: msg.message});
+          return res.send({success: true, deletes: total, picture: game.img, message: msg.gamifyMsg, sharemsg: param});
         }
       );
     });
