@@ -724,6 +724,15 @@ app.get('/fb/wallpost', function (req, res) {
   } else {
   
     var msg = req.session.app.shareMsg;
+    if( msg.name && req.session.passport.user.name ){
+      msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+    }
+    if( msg.caption && req.session.passport.user.name ){
+      msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+    }
+    if( msg.description && req.session.passport.user.name ){
+      msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+    }
     if( msg.message && req.session.passport.user.name ){
       msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
     }
@@ -810,10 +819,34 @@ app.get('/fb/shareresults/:num', function (req, res) {
     // GAMIFY
     var game = gamify(num);
     var msg = req.session.app.shareResultsMsg;
-    if( msg.gamifyMsg ) msg.gamifyMsg = null;
+    if( msg.gamifyMsg ) delete msg.gamifyMsg;
     if( msg.picture ){
       msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
       msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
+    }
+    if( msg.name ){
+      if( req.session.passport.user.name ){
+        msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+      }
+      msg.name = msg.name.replace('NUMBER', num);
+      msg.name = msg.name.replace('GAME_LEVEL', game.level);
+      msg.name = msg.name.replace('GAME_IMAGE', game.img);
+    }
+    if( msg.caption ){
+      if( req.session.passport.user.name ){
+        msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+      }
+      msg.caption = msg.caption.replace('NUMBER', num);
+      msg.caption = msg.caption.replace('GAME_LEVEL', game.level);
+      msg.caption = msg.caption.replace('GAME_IMAGE', game.img);
+    }
+    if( msg.description ){
+      if( req.session.passport.user.name ){
+        msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+      }
+      msg.description = msg.description.replace('NUMBER', num);
+      msg.description = msg.description.replace('GAME_LEVEL', game.level);
+      msg.description = msg.description.replace('GAME_IMAGE', game.img);
     }
     if( msg.message ){
       if( req.session.passport.user.name ){
@@ -917,6 +950,30 @@ app.get('/fb/logdeletes/:num', function (req, res) {
             msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
             msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
           }
+          if( msg.name ){
+            if( req.session.passport.user.name ){
+              msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+            }
+            msg.name = msg.name.replace('NUMBER', num);
+            msg.name = msg.name.replace('GAME_LEVEL', game.level);
+            msg.name = msg.name.replace('GAME_IMAGE', game.img);
+          }
+          if( msg.caption ){
+            if( req.session.passport.user.name ){
+              msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+            }
+            msg.caption = msg.caption.replace('NUMBER', num);
+            msg.caption = msg.caption.replace('GAME_LEVEL', game.level);
+            msg.caption = msg.caption.replace('GAME_IMAGE', game.img);
+          }
+          if( msg.description ){
+            if( req.session.passport.user.name ){
+              msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+            }
+            msg.description = msg.description.replace('NUMBER', num);
+            msg.description = msg.description.replace('GAME_LEVEL', game.level);
+            msg.description = msg.description.replace('GAME_IMAGE', game.img);
+          }
           if( msg.message ){
             if( req.session.passport.user.name ){
               msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
@@ -928,7 +985,8 @@ app.get('/fb/logdeletes/:num', function (req, res) {
           var gamifyMsg = '';
           if( msg.gamifyMsg ){
             gamifyMsg = msg.gamifyMsg;
-            msg.gamifyMsg = null;
+            delete msg.gamifyMsg;
+            
             if( req.session.passport.user.name ){
               gamifyMsg = gamifyMsg.replace('DISPLAY_NAME', req.session.passport.user.name);
             }
