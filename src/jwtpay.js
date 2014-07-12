@@ -238,32 +238,32 @@ passport.use(new GoogleStrategy({
 }));
 
 passport.use(new FacebookStrategy({
-	clientID : settings.facebook.appId,
-	clientSecret : settings.facebook.appSecret,
-	callbackURL : settings.facebook.callbackURI
+  clientID : settings.facebook.appId,
+  clientSecret : settings.facebook.appSecret,
+  callbackURL : settings.facebook.callbackURI
 }, function(accessToken, refreshToken, profile, done) {
-	//done(null, profile);
-	var newUserEmail = "";
-	if(typeof(profile.emails)!=='undefined'){
-		if (profile.emails.length) {
-			newUserEmail = profile.emails[0].value;
-	}
-	}
-	else {
-		newUserEmail = profile.id;
-	}
-	getUser(newUserEmail, 'facebook', profile.id, function(err, user) {
-		if (err) {
-			return done(err);
-		}
+  //done(null, profile);
+  var newUserEmail = "";
+  if(typeof(profile.emails)!=='undefined'){
+    if (profile.emails.length) {
+      newUserEmail = profile.emails[0].value;
+    }
+  }
+  else {
+    newUserEmail = profile.id;
+  }
+  getUser(newUserEmail, 'facebook', profile.id, function(err, user) {
+    if (err) {
+      return done(err);
+    }
 
-		if (!user) {
+    if (!user) {
       return createUserWithFacebookInfo(newUserEmail, profile, accessToken, done);
-		}
+    }
 
     return updateFacebookAccessToken(user, accessToken, profile, done);
 
-	});
+  });
 })); 
 
 
@@ -810,6 +810,11 @@ app.get('/fb/shareresults/:num', function (req, res) {
     // GAMIFY
     var game = gamify(num);
     var msg = req.session.app.shareResultsMsg;
+    if( msg.gamifyMsg ) msg.gamifyMsg = null;
+    if( msg.picture ){
+      msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
+      msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
+    }
     if( msg.message ){
       if( req.session.passport.user.name ){
         msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
@@ -899,6 +904,10 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       // GAMIFY
       var game = gamify(total);
       var msg = req.session.app.shareResultsMsg;
+      if( msg.picture ){
+        msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
+        msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
+      }
       if( msg.message ){
         if( req.session.passport.user.name ){
           msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
@@ -916,11 +925,11 @@ app.get('/fb/logdeletes/:num', function (req, res) {
         msg.gamifyMsg = msg.gamifyMsg.replace('GAME_IMAGE', game.img);
       }
       var param = {
-        app_id: req.session.appId,
+        app_id: settings.facebook.appId,
         display: 'popup',
-        picture: game.img,
+        picture: msg.picture,
         link: msg.link,
-        caption: msg.link,
+        caption: msg.caption,
         name: msg.gamifyMsg,
         description: msg.message
       };

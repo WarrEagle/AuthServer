@@ -4,7 +4,7 @@ var ObjectId = Schema.ObjectId;
 
 var App;
 var appSchema = new Schema();
-  
+
 appSchema.add({
   language:      String,
   name:          { type: String, unique: true },
@@ -19,15 +19,15 @@ appSchema.add({
   shareMsg: {
     caption: String,
     link: String,
+    picture: String,
     message: String
   },
   shareResultsMsg: {
     caption: String,
     link: String,
-    message: String
-  },
-  gamifyMsg: {
-    message: String
+    picture: String,
+    message: String,
+    gamifyMsg: String
   },
   includes:      {}
 });
@@ -53,6 +53,7 @@ var fbApp = new App({
   "shareResultsMsg": {
     "caption": "Friend Remover PRO",
     "link": "http://friend-manager.com/",
+    "picture": "GAME_IMAGE",
     "message": "DISPLAY_NAME just deleted NUMBER friends using Facebook Friend Remover available for Chrome users. He has achieved the GAME_LEVEL award.",
     "gamifyMsg": "Your Killer Level: GAME_LEVEL"
   },
