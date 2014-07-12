@@ -901,39 +901,6 @@ app.get('/fb/logdeletes/:num', function (req, res) {
         total += parseInt(stats.total);
       }
       
-      // GAMIFY
-      var game = gamify(total);
-      var msg = req.session.app.shareResultsMsg;
-      if( msg.picture ){
-        msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
-        msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
-      }
-      if( msg.message ){
-        if( req.session.passport.user.name ){
-          msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
-        }
-        msg.message = msg.message.replace('NUMBER', num);
-        msg.message = msg.message.replace('GAME_LEVEL', game.level);
-        msg.message = msg.message.replace('GAME_IMAGE', game.img);
-      }
-      if( msg.gamifyMsg ){
-        if( req.session.passport.user.name ){
-          msg.gamifyMsg = msg.gamifyMsg.replace('DISPLAY_NAME', req.session.passport.user.name);
-        }
-        msg.gamifyMsg = msg.gamifyMsg.replace('NUMBER', num);
-        msg.gamifyMsg = msg.gamifyMsg.replace('GAME_LEVEL', game.level);
-        msg.gamifyMsg = msg.gamifyMsg.replace('GAME_IMAGE', game.img);
-      }
-      var param = {
-        app_id: settings.facebook.appId,
-        display: 'popup',
-        picture: msg.picture,
-        link: msg.link,
-        caption: msg.caption,
-        name: msg.gamifyMsg,
-        description: msg.message
-      };
-      
       User.updateAppStats(req.session.passport.user.email, 
         req.session.passport.user.facebook.email, 
         req.session.appId,
@@ -942,7 +909,44 @@ app.get('/fb/logdeletes/:num', function (req, res) {
           if(err || !updatedUser) {
             return res.send({success: false});
           }
-          return res.send({success: true, deletes: total, picture: game.img, message: msg.gamifyMsg, sharemsg: param});
+
+          // GAMIFY
+          var game = gamify(total);
+          var msg = req.session.app.shareResultsMsg;
+          if( msg.picture ){
+            msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
+            msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
+          }
+          if( msg.message ){
+            if( req.session.passport.user.name ){
+              msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
+            }
+            msg.message = msg.message.replace('NUMBER', num);
+            msg.message = msg.message.replace('GAME_LEVEL', game.level);
+            msg.message = msg.message.replace('GAME_IMAGE', game.img);
+          }
+          var gamifyMsg = '';
+          if( msg.gamifyMsg ){
+            gamifyMsg = msg.gamifyMsg;
+            msg.gamifyMsg = null;
+            if( req.session.passport.user.name ){
+              gamifyMsg = gamifyMsg.replace('DISPLAY_NAME', req.session.passport.user.name);
+            }
+            gamifyMsg = gamifyMsg.replace('NUMBER', num);
+            gamifyMsg = gamifyMsg.replace('GAME_LEVEL', game.level);
+            gamifyMsg = gamifyMsg.replace('GAME_IMAGE', game.img);
+          }
+          if( msg.redirect_uri ){
+            msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
+          }
+          if( !msg.app_id ){
+            msg.app_id = settings.facebook.appId;
+          }
+          if( !msg.display ){
+            msg.display = 'popup';
+          }
+          
+          return res.send({success: true, deletes: total, picture: game.img, message: gamifyMsg, sharemsg: msg});
         }
       );
     });

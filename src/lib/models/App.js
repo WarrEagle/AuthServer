@@ -51,6 +51,7 @@ var fbApp = new App({
     "message": "DISPLAY_NAME is using Facebook Friend Remover. The only app that lets you remove your friends quick and easy. Get your copy today!"
   },
   "shareResultsMsg": {
+    "redirect_uri": "/gamify/close.html",
     "caption": "Friend Remover PRO",
     "link": "http://friend-manager.com/",
     "picture": "GAME_IMAGE",
