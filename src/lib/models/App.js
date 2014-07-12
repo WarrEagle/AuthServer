@@ -52,11 +52,9 @@ var fbApp = new App({
   },
   "shareResultsMsg": {
     "caption": "Friend Remover PRO",
-    "link": "GAME_IMAGE",
-    "message": "DISPLAY_NAME just deleted NUMBER friends using Facebook Friend Remover available for Chrome users. He has achieved the GAME_LEVEL award."
-  },
-  "gamifyMsg": {
-    "message": "Your Killer Level: GAME_LEVEL"
+    "link": "http://friend-manager.com/",
+    "message": "DISPLAY_NAME just deleted NUMBER friends using Facebook Friend Remover available for Chrome users. He has achieved the GAME_LEVEL award.",
+    "gamifyMsg": "Your Killer Level: GAME_LEVEL"
   },
   "includes" : {
     "full" : ""

@@ -818,9 +818,6 @@ app.get('/fb/shareresults/:num', function (req, res) {
       msg.message = msg.message.replace('GAME_LEVEL', game.level);
       msg.message = msg.message.replace('GAME_IMAGE', game.img);
     }
-    if( msg.link ){
-      msg.link = msg.link.replace('GAME_IMAGE', game.img);
-    }
     
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
     FB.api('me/feed', 'post', msg, function (result) {
@@ -901,12 +898,32 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       
       // GAMIFY
       var game = gamify(total);
-      var msg = req.session.app.gamifyMsg;
+      var msg = req.session.app.shareResultsMsg;
       if( msg.message ){
+        if( req.session.passport.user.name ){
+          msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
+        }
         msg.message = msg.message.replace('NUMBER', num);
         msg.message = msg.message.replace('GAME_LEVEL', game.level);
         msg.message = msg.message.replace('GAME_IMAGE', game.img);
       }
+      if( msg.gamifyMsg ){
+        if( req.session.passport.user.name ){
+          msg.gamifyMsg = msg.gamifyMsg.replace('DISPLAY_NAME', req.session.passport.user.name);
+        }
+        msg.gamifyMsg = msg.gamifyMsg.replace('NUMBER', num);
+        msg.gamifyMsg = msg.gamifyMsg.replace('GAME_LEVEL', game.level);
+        msg.gamifyMsg = msg.gamifyMsg.replace('GAME_IMAGE', game.img);
+      }
+      var param = {
+        app_id: req.session.appId,
+        display: 'popup',
+        picture: game.img,
+        link: msg.link,
+        caption: msg.link,
+        name: msg.gamifyMsg,
+        description: msg.message
+      };
       
       User.updateAppStats(req.session.passport.user.email, 
         req.session.passport.user.facebook.email, 
@@ -916,7 +933,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
           if(err || !updatedUser) {
             return res.send({success: false});
           }
-          return res.send({success: true, deletes: total, picture: game.img, message: msg.message});
+          return res.send({success: true, deletes: total, picture: game.img, message: msg.gamifyMsg, sharemsg: msg.message});
         }
       );
     });
