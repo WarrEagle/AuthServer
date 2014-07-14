@@ -34,8 +34,8 @@
     	"api": {
 	    	"host" : "api.paypal.com",
 				"port" : "",
-				"client_id" : "AfoM1xC9D01RD8dqhbIAHVhrSTbTqDZSt21XGy-5Ez2XQDq_dbEwjqWC3L-5",
-				"client_secret" : "EB5gRBBE7ebjvitv3EmRkhPjVc2ZvJL8B9A2Odh5oQtFKqsMs-dZLPOX0Vfe"
+				"client_id" : "ASGr8hB8GeHz4BpcB9eUDoDxl93iQshWbtlh9n48fFTqdCwB3vao-pHYv_P0",
+				"client_secret" : "EE_nChCg3fL6qI1vns2gLXEDPOK3WLnjRYp67dHv-ZW36R5dvIBZMJHOmyri"
     	},
 		"intent": "sale",
 		"method": "paypal",
@@ -85,8 +85,8 @@
     	"api": {
 	    	"host" : "api.paypal.com",
 				"port" : "",
-				"client_id" : "AfoM1xC9D01RD8dqhbIAHVhrSTbTqDZSt21XGy-5Ez2XQDq_dbEwjqWC3L-5",
-				"client_secret" : "EB5gRBBE7ebjvitv3EmRkhPjVc2ZvJL8B9A2Odh5oQtFKqsMs-dZLPOX0Vfe"
+				"client_id" : "ASGr8hB8GeHz4BpcB9eUDoDxl93iQshWbtlh9n48fFTqdCwB3vao-pHYv_P0",
+				"client_secret" : "EE_nChCg3fL6qI1vns2gLXEDPOK3WLnjRYp67dHv-ZW36R5dvIBZMJHOmyri"
     	},
 		"intent": "sale",
 		"method": "paypal",
