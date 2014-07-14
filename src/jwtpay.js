@@ -943,6 +943,9 @@ app.get('/fb/logdeletes/:num', function (req, res) {
             return res.send({success: false});
           }
 
+          // use total for the share message
+          num = total;
+          
           // GAMIFY
           var game = gamify(total);
           var msg = req.session.app.shareResultsMsg;

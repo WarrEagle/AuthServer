@@ -21,9 +21,9 @@
       "api_path": "/api/checkout/v2/",
       "appId": "957844751549-uiqtfpuoa5415p5ups8pldp19vp72spf.apps.googleusercontent.com",
       "appSecret": "BJvKbKl2TdVY63HTcqyvODCR",
-      "callbackURI": "http://auth.friend-manager.com/auth/google/callback",
-      "returnURL": "http://auth.friend-manager.com/auth/google/callback",
-      "realm": "http://auth.friend-manager.com/"
+      "callbackURI": "http://auth2.friend-manager.com/auth/google/callback",
+      "returnURL": "http://auth2.friend-manager.com/auth/google/callback",
+      "realm": "http://auth2.friend-manager.com/"
     },
     "facebook": {
       "appId": "102524159894085",
@@ -52,7 +52,7 @@
   },
   "production": {
     "app": {
-      "hostname": "http://auth.friend-manager.com",
+      "hostname": "http://auth2.friend-manager.com",
       "db": "mongodb://localhost/kickass",
       "logging": {
         "loggers": {
@@ -72,14 +72,14 @@
       "api_path": "/api/checkout/v2/",
       "appId": "957844751549-uiqtfpuoa5415p5ups8pldp19vp72spf.apps.googleusercontent.com",
       "appSecret": "BJvKbKl2TdVY63HTcqyvODCR",
-      "callbackURI": "http://auth.friend-manager.com/auth/google/callback",
-      "returnURL": "http://auth.friend-manager.com/auth/google/callback",
-      "realm": "http://auth.friend-manager.com/"
+      "callbackURI": "http://auth2.friend-manager.com/auth/google/callback",
+      "returnURL": "http://auth2.friend-manager.com/auth/google/callback",
+      "realm": "http://auth2.friend-manager.com/"
     },
     "facebook": {
       "appId": "102524159894085",
       "appSecret": "efde85423fb4060b3478db1f4c65dbe2",
-      "callbackURI": "http://auth.friend-manager.com/auth/facebook/callback"
+      "callbackURI": "http://auth2.friend-manager.com/auth/facebook/callback"
     },
     "paypal": {
     	"api": {
@@ -91,7 +91,7 @@
 		"intent": "sale",
 		"method": "paypal",
 		"currency": "USD",
-		"host": "auth.friend-manager.com",
+		"host": "auth2.friend-manager.com",
 		"port": "80",
 		"returnPath": "paypalSuccess",
 		"cancelPath": "payment/gateways"
