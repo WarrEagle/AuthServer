@@ -7,7 +7,7 @@ JWTPAY=/opt/kickass
 do_start() {
 	echo "Starting $DESC"
 	export NODE_ENV=production
-	forever /opt/kickass/src/jwtpay.js >> /opt/kickass/log/jwtpay/jwtpay.log 2>&1 &
+	forever -w --watchDirectory /opt/kickass/src /opt/kickass/src/jwtpay.js >> /opt/kickass/log/jwtpay/jwtpay.log 2>&1 &
 }
 
 
