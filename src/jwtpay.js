@@ -682,12 +682,17 @@ app.get('/fb/checkauth/:id/:key', function (req, res) {
 });
 
 
-app.get('/fb/auth', passport.authenticate('facebook', { scope: ['public_profile', 'email', 'user_friends', 'publish_actions'] } ));
+app.get('/fb/auth', passport.authenticate('facebook', { display: 'popup', scope: ['public_profile', 'email', 'user_friends'] } ));
 app.get('/fb/login', function(req, res) {
   req.session.from = 'chrome';
   return res.redirect('/fb/auth');
 });
 
+app.get('/fb/auth2', passport.authenticate('facebook', { display: 'popup', scope: ['publish_actions'] } ));
+app.get('/fb/login2', function(req, res) {
+  req.session.from = 'chrome';
+  return res.redirect('/fb/auth2');
+});
 
 app.get('/fb/friends', function (req, res) {
   if( !req.isAuthenticated() 
@@ -868,6 +873,31 @@ app.get('/fb/shareresults/:num', function (req, res) {
 });
 
 
+app.get('/fb/wallpost/save', function (req, res) {
+  if( !req.isAuthenticated() 
+      || typeof(req.session.passport.user)==='undefined' 
+      || typeof(req.session.passport.user.facebook)==='undefined'
+      || typeof(req.session.appId)==='undefined' ) {
+      
+    return res.send({success: false, loggedIn: false});
+    
+  } else {
+    
+    if( req.query.post_id ) {
+      User.updateAppStats(req.session.passport.user.email, 
+        req.session.passport.user.facebook.email, 
+        req.session.appId,
+        'has_shared', true, 
+        function(err, updatedUser) {
+        }
+      );
+    }
+    
+    return res.render('fbLoginCallback');
+  }
+});
+
+
 app.get('/fb/wallpost/check/:key', function (req, res) {
   if( !req.isAuthenticated() 
       || typeof(req.session.passport.user)==='undefined' 
@@ -894,11 +924,42 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
         has_shared = stats.has_shared;
       }
       
-      return res.send({success: true, has_shared: has_shared});
+      if( has_shared ){
+        
+        return res.send({success: true, has_shared: true});
+      
+      } else {
+      
+        var msg = req.session.app.shareMsg;
+        if( msg.name && req.session.passport.user.name ){
+          msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+        }
+        if( msg.caption && req.session.passport.user.name ){
+          msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+        }
+        if( msg.description && req.session.passport.user.name ){
+          msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+        }
+        if( msg.message && req.session.passport.user.name ){
+          msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
+        }
+        
+        if( msg.redirect_uri ){
+          msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
+        }
+        if( !msg.app_id ){
+          msg.app_id = settings.facebook.appId;
+        }
+        if( !msg.display ){
+          msg.display = 'popup';
+        }
+        
+        return res.send({success: true, has_shared: false, sharemsg: msg});
+          
+      }
     });
   }
 });
-
 
 
 app.get('/fb/logdeletes/:num', function (req, res) {

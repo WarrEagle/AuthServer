@@ -47,17 +47,17 @@ var fbApp = new App({
   },
   "shareMsg": {
     "link": "http://friend-manager.com/",
-    "name": "(name) Friend Remover PRO",
-    "caption": "(caption) Friend Remover PRO",
-    "description" : "(description) Delele all friends in one click",
-    "message": "DISPLAY_NAME is using Facebook Friend Remover. The only app that lets you remove your friends quick and easy. Get your copy today!"
+    "name": "DISPLAY_NAME is using Facebook Friend Remover. The only app that lets you remove your friends quick and easy. Get your copy today!",
+    "caption": "Friend Remover PRO",
+    "description" : "Delele all friends in one click",
+    "redirect_uri": "/fb/wallpost/save"
   },
   "shareResultsMsg": {
     "picture": "GAME_IMAGE",
     "link": "http://friend-manager.com/",
     "name": "DISPLAY_NAME just deleted NUMBER friends using Facebook Friend Remover available for Chrome users. He has achieved the GAME_LEVEL award.",
-    "caption": "(caption) Friend Remover PRO",
-    "description" : "(description) Delele all friends in one click",
+    "caption": "Friend Remover PRO",
+    "description" : "Delele all friends in one click",
     "gamifyMsg": "Your Killer Level: GAME_LEVEL",
     "redirect_uri": "/gamify/close.html"
   },
