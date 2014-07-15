@@ -60,7 +60,7 @@
         },          
         "level": "info",
         "enabled": ["console"],
-        "accessLogs": false,
+        "accessLogs": true,
         "serverId": "production"
       },
       "email": "michaelquale+kauth@gmail.com" 
