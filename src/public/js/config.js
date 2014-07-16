@@ -9,4 +9,4 @@ var Config = function() {
 //Config.appId = '';
 
 //friend-manager.com
-Config.appId = '102524159894085';
+Config.appId = '369905469744348';
