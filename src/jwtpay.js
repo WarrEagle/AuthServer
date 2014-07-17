@@ -280,7 +280,7 @@ app.get('/auth/google',
        'https://www.googleapis.com/auth/userinfo.email'] }
 ));
 
-app.get('/auth/facebook', passport.authenticate('facebook', { scope: 'email'} ));
+app.get('/auth/facebook', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
 
 app.get('/auth/facebook/callback', 
   passport.authenticate('facebook', { failureRedirect: '/auth/providers' }),
@@ -682,7 +682,7 @@ app.get('/fb/checkauth/:id/:key', function (req, res) {
 });
 
 
-app.get('/fb/auth', passport.authenticate('facebook', { display: 'popup', scope: ['public_profile', 'email', 'user_friends'] } ));
+app.get('/fb/auth', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
 app.get('/fb/login', function(req, res) {
   req.session.from = 'chrome';
   return res.redirect('/fb/auth');
