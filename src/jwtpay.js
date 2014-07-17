@@ -189,7 +189,7 @@ function createUser(provider, email, profile, accessToken, cb) {
       return cb(err);
     }
     var date = new Date(newUser._id.getTimestamp());
-    app.logger.info('NEW USER CREATED'); 
+    app.logger.info('NEW USER CREATED: ' + email); 
     return cb(null, newUser);
   });
 
@@ -543,7 +543,7 @@ app.get('/purchase/check/:key', function (req, res) {
 });
 
 function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
-	app.logger.info('NEW ORDER', token); 
+	app.logger.info('NEW ORDER: ' + token); 
 	var p = {
     orderNumber:  token,
     app:          appId,
@@ -573,7 +573,32 @@ function markPurchaseAsComplete(token) {
 		}
 
 		purchase.status = 'COMPLETE';
-		purchase.save();
+		purchase.save(function(){
+    
+      // Find all pending orders and remove them
+      Purchase.find({
+        purchaseKey:  purchase.purchaseKey,
+        status:       'PENDING'
+      }).populate('app').exec(function(err, list) {
+        if (err) {
+          app.logger.error('Could not fetch purchase:', err);
+          return;
+        }
+        
+        // No pending orders found then return
+        if (!list || list.length === 0)
+          return;
+        
+        // Remove pending orders
+        var i = 0, len = list.length;
+        for (i = 0; i < len;) {
+          list[i].remove();
+          i = i + 1;
+        }
+        
+        app.logger.info('Removed ' + len + ' PENDING Orders for PurchaseKey: ' + purchase.purchaseKey);
+      });
+    });
 
 		transport.sendMail({
 			from : 'postman@kickasschromeapps.com',
@@ -581,32 +606,8 @@ function markPurchaseAsComplete(token) {
 			subject : 'KickassAuth New ' + purchase.app.language + ' Order: ' + token,
 			text : JSON.stringify(purchase)
 		});
-		app.logger.info('NEW ORDER COMPLETE', token); 
+		app.logger.info('NEW ORDER COMPLETE: ' + token); 
     
-    // Find all pending orders and remove them
-    Purchase.find({
-      purchaseKey:  purchase.purchaseKey,
-      status:       'PENDING'
-    }).populate('app').exec(function(err, list) {
-      if (err) {
-        app.logger.error('Could not fetch purchase:', err);
-        return;
-      }
-      
-      // No pending orders found then return
-      if (!list || list.length === 0)
-        return;
-      
-      // Remove pending orders
-      var i = 0, len = list.length;
-      for (i = 0; i < len;) {
-        list[i].remove();
-        i = i + 1;
-      }
-      
-      app.logger.info('Removed ' + len + ' PENDING Orders for User-PurchaseKey: ' + purchase.purchaseKey);
-    });
-
 	});
 }
 
@@ -625,7 +626,7 @@ app.post('/google/notify', function (req, res) {
     function (err, details) {
     	
       if (details.merchantData.length > 0) {
-        app.logger.info('NEW ORDER', details.orderNumber); 
+        app.logger.info('NEW ORDER: ' + details.orderNumber); 
 
         var merchantData = details.merchantData[0];
 
@@ -647,7 +648,7 @@ app.post('/google/notify', function (req, res) {
         }
 
       } else if (details.riskNotification) {
-        app.logger.info('RISK notification received for', details.orderNumber);
+        app.logger.info('RISK notification received for ' + details.orderNumber);
       }
     }
   );
