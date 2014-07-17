@@ -44,9 +44,9 @@ var paymentGateways = {
 var transport = nodemailer.createTransport(
   'SMTP', 
   {
-    host: 'kickasschromeapps.com',	
-    secureConnection: true,
-    port: 587 ,
+    host: 'kickasschromeapps.com',
+    secureConnection: false,
+    port: 25,
     auth: {
       user: 'no-reply@kickasschromeapps.com',
       pass: 'getin2it'
@@ -68,10 +68,16 @@ process.on('uncaughtException', function (err) {
 
   if (process.env.NODE_ENV == 'production') {
     transport.sendMail({
-      from: 'postman@kickasschromeapps.com',
+      from: 'no-reply@kickasschromeapps.com',
       to: settings.app.email,
-      subject: 'KickassAuth Payment Uncaught Exception',
-      text: 'Error: ' + err.toString()
+      subject: 'KickassAuth Friend Remover Uncaught Exception',
+      text: 'Error: ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2)
+    }, function(error, response){
+      if(error){
+        app.logger.error('Could not send email for Uncaught Exception: ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
+      }else{
+        app.logger.info('Email sent for Uncaught Exception');
+      }
     });
   }
 });
@@ -493,7 +499,7 @@ app.get('/buy/:id', function (req, res) {
 	  	if(err.message === 'PURCHASE_ALREADY_COMPLETE') {
 	  		return purchaseToRevalidate(err.purchase, purchaseKey, function() {
 	  			req.logout(); // reset login session for security
-          app.logger.info('Revalidated User: PurchaseKey: ' + purchaseKey );
+          app.logger.info('Revalidated User: PurchaseKey: ' + purchaseKey);
           return res.render( 'revalidate', view({ layout: false, app: err.app }));
 	  		});
 	  	}
@@ -559,21 +565,43 @@ function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
 
 
 function markPurchaseAsComplete(token) {
-	Purchase.findOne({
-		orderNumber : token
-	}).populate('app').exec(function(err, purchase) {
-		if (err) {
-			app.logger.error('Could not fetch purchase:', err);
-			return;
-		}
+  Purchase.findOne({
+    orderNumber : token
+  }).populate('app').exec(function(err, purchase) {
+    if (err) {
+      app.logger.error('Could not fetch purchase: ' + token);
+      return;
+    }
 
-		if (!purchase) {
-			app.logger.error('PURCHASE NOT FOUND: ' + token);
-			return;
-		}
+    if (!purchase) {
+      app.logger.error('PURCHASE NOT FOUND: ' + token);
+      return;
+    }
 
-		purchase.status = 'COMPLETE';
-		purchase.save(function(){
+    if (process.env.NODE_ENV == 'production') {
+      transport.sendMail({
+        from: 'no-reply@kickasschromeapps.com',
+        to: settings.app.email,
+        subject: 'KickassAuth Friend Remover ' + purchase.app.language + ' Order: ' + token,
+        text: '\n created: ' + purchase.created
+            + '\n orderId:	' + purchase.orderId
+            + '\n orderNumber: ' + purchase.orderNumber
+            + '\n app: ' + purchase.app._id.toString()
+            + '\n purchaseKey: ' + purchase.purchaseKey
+            + '\n googleId: ' + purchase.googleId
+            + '\n user: ' + purchase.user._id.toString()
+      }, function(error, response){
+        if(error){
+          app.logger.error('Could not send email for Purchase COMPLETE: ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
+        }else{
+          app.logger.info('Email sent for Purchase COMPLETE');
+        }
+      });
+    }
+    app.logger.info('NEW ORDER COMPLETE: ' + token);
+
+    purchase.status = 'COMPLETE';
+    purchase.save(function(){
     
       // Find all pending orders and remove them
       Purchase.find({
@@ -581,7 +609,7 @@ function markPurchaseAsComplete(token) {
         status:       'PENDING'
       }).populate('app').exec(function(err, list) {
         if (err) {
-          app.logger.error('Could not fetch purchase:', err);
+          app.logger.error('Could not fetch pending purchase for PurchaseKey: ' + purchase.purchaseKey);
           return;
         }
         
@@ -598,17 +626,8 @@ function markPurchaseAsComplete(token) {
         
         app.logger.info('Removed ' + len + ' PENDING Orders for PurchaseKey: ' + purchase.purchaseKey);
       });
-    });
-
-		transport.sendMail({
-			from : 'postman@kickasschromeapps.com',
-			to : settings.app.email,
-			subject : 'KickassAuth New ' + purchase.app.language + ' Order: ' + token,
-			text : JSON.stringify(purchase)
-		});
-		app.logger.info('NEW ORDER COMPLETE: ' + token); 
-    
-	});
+    });    
+  });
 }
 
 
@@ -1082,10 +1101,16 @@ var port = process.argv[2] || 3000;
 
 if (process.env.NODE_ENV == 'production') {
   transport.sendMail({
-    from: 'postman@kickasschromeapps.com',
+    from: 'no-reply@kickasschromeapps.com',
     to: settings.app.email,
-    subject: 'KickassAuth Starting up daemon. Port ' + port,
+    subject: 'KickassAuth Friend Remover Starting up daemon. Port ' + port,
     text: 'Just a friendly notice.'
+  }, function(error, response){
+    if(error){
+      app.logger.error('Could not send email for Starting up daemon: ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
+    }else{
+      app.logger.info('Email sent for Starting up daemon');
+    }
   });
 }
 
