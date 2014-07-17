@@ -17,17 +17,21 @@ appSchema.add({
     body:        String
   },
   shareMsg: {
-    caption: String,
-    link: String,
     picture: String,
-    message: String
+    link: String,
+    name: String,
+    caption: String,
+    description: String,
+    redirect_uri: String
   },
   shareResultsMsg: {
-    caption: String,
-    link: String,
     picture: String,
-    message: String,
-    gamifyMsg: String
+    link: String,
+    name: String,
+    caption: String,
+    description: String,
+    gamifyMsg: String,
+    redirect_uri: String
   },
   includes:      {}
 });

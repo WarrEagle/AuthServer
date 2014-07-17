@@ -1,6 +1,5 @@
 var settings = require('../settings.js');
 var mongoose = require('mongoose');
-//var mongooseAuth = require('mongoose-auth');
 var Schema = mongoose.Schema;
 var ObjectId = Schema.ObjectId;
 
@@ -21,27 +20,6 @@ userSchema.add({
   },
   login: String
 });
-
-/*
-userSchema.plugin(mongooseAuth, {
-  everymodule: {
-    everyauth: {
-      User: function () {
-        return User;
-      }
-    }
-  },
-  google: {
-    everyauth: {
-      appId: settings.google.everyauth.appId,
-      appSecret: settings.google.everyauth.appSecret,
-      scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-      redirectPath: '/postauth',
-      myHostname: settings.app.hostname
-    }
-  }
-});
-*/
 
 
 userSchema.statics.updateToken = function (email, provider, token, profile, callback) {

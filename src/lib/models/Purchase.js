@@ -6,7 +6,7 @@ var Purchase;
 var purchaseSchema = new Schema();
 
 purchaseSchema.add({
-	id:						String,
+	orderId:			String,
   orderNumber:  String,
   app:          { type: ObjectId, ref: 'App' },
   purchaseKey:  String,

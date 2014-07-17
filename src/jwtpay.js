@@ -428,7 +428,7 @@ app.get('/' + settings.paypal.returnPath, function(req, res) {
 	
 	Purchase.findOne({
 		orderId: orderId
-	}, function(err, purchase) {
+	}).populate('app').exec(function(err, purchase) {
 		
 		if(err) {
 			return respondError('Error while looking for purchase', req, res, err);
