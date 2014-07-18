@@ -26,8 +26,8 @@
       "realm": "http://auth2.friend-manager.com/"
     },
     "facebook": {
-      "appId": "102524159894085",
-      "appSecret": "efde85423fb4060b3478db1f4c65dbe2",
+      "appId": "503672426336852",
+      "appSecret": "82a5496e1ede78849fc40be1b3ed0fe0",
       "callbackURI": "http://auth2.friend-manager.com/auth/facebook/callback"
     },
     "paypal": {
@@ -77,8 +77,8 @@
       "realm": "http://auth2.friend-manager.com/"
     },
     "facebook": {
-      "appId": "102524159894085",
-      "appSecret": "efde85423fb4060b3478db1f4c65dbe2",
+      "appId": "503672426336852",
+      "appSecret": "82a5496e1ede78849fc40be1b3ed0fe0",
       "callbackURI": "http://auth2.friend-manager.com/auth/facebook/callback"
     },
     "paypal": {
