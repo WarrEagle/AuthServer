@@ -582,14 +582,14 @@ function markPurchaseAsComplete(token) {
       transport.sendMail({
         from: 'no-reply@kickasschromeapps.com',
         to: settings.app.email,
-        subject: 'KickassAuth Friend Remover ' + purchase.app.language + ' Order: ' + token,
+        subject: 'KickassAuth Friend Remover Order: ' + token,
         text: '\n created: ' + purchase.created
             + '\n orderId:	' + purchase.orderId
             + '\n orderNumber: ' + purchase.orderNumber
-            + '\n app: ' + purchase.app._id.toString()
+          //  + '\n app: ' + purchase.app._id.toString()
             + '\n purchaseKey: ' + purchase.purchaseKey
             + '\n googleId: ' + purchase.googleId
-            + '\n user: ' + purchase.user._id.toString()
+          //  + '\n user: ' + purchase.user._id.toString()
       }, function(error, response){
         if(error){
           app.logger.error('Could not send email for Purchase COMPLETE: ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
