@@ -309,18 +309,20 @@ app.get('/auth/facebook/callback',
 app.get('/auth/providers', function(req, res) {
   //console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
   req.session.from = 'buy';
-  res.render('oauthProviders', {
-    providers: [{
-      name: 'google'
-      , title: 'Google+'
-      , path: '/auth/google'
-    }
-    , {
-      name: 'facebook'
-      , title: 'Facebook'
-      , path: '/auth/facebook'
-    }]
-  })
+  return req.session.save(function() {
+    res.render('oauthProviders', {
+      providers: [{
+        name: 'google'
+        , title: 'Google+'
+        , path: '/auth/google'
+      }
+      , {
+        name: 'facebook'
+        , title: 'Facebook'
+        , path: '/auth/facebook'
+      }]
+    });
+  });
 });
 
 app.get('/logout', function(req, res){
@@ -710,13 +712,17 @@ app.get('/fb/checkauth/:id/:key', function (req, res) {
 app.get('/fb/auth', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
 app.get('/fb/login', function(req, res) {
   req.session.from = 'chrome';
-  return res.redirect('/fb/auth');
+  return req.session.save(function() {
+    return res.redirect('/fb/auth');
+  });
 });
 
 app.get('/fb/auth2', passport.authenticate('facebook', { display: 'popup', scope: ['publish_actions'] } ));
 app.get('/fb/login2', function(req, res) {
   req.session.from = 'chrome';
-  return res.redirect('/fb/auth2');
+  return req.session.save(function() {
+    return res.redirect('/fb/auth2');
+  });
 });
 
 app.get('/fb/friends', function (req, res) {
@@ -947,7 +953,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
   
     User.findOne({
       email: req.session.passport.user.email,
-      login: 'facebook:' + req.session.passport.user.facebook.email
+      login: req.session.passport.user.login
     }, function(err, u) {
       
       if(err || !u) {
@@ -1021,7 +1027,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
   
     User.findOne({
       email: req.session.passport.user.email,
-      login: 'facebook:' + req.session.passport.user.facebook.email
+      login: req.session.passport.user.login
     }, function(err, u) {
       
       if(err || !u) {
