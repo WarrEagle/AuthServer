@@ -764,16 +764,16 @@ app.get('/fb/wallpost', function (req, res) {
   
     var msg = req.session.app.shareMsg;
     if( msg.name && req.session.passport.user.name ){
-      msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+      msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
     }
     if( msg.caption && req.session.passport.user.name ){
-      msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+      msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
     }
     if( msg.description && req.session.passport.user.name ){
-      msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+      msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
     }
     if( msg.message && req.session.passport.user.name ){
-      msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
+      msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
     }
     
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
@@ -863,40 +863,40 @@ app.get('/fb/shareresults/:num', function (req, res) {
     var msg = req.session.app.shareResultsMsg;
     if( msg.gamifyMsg ) delete msg.gamifyMsg;
     if( msg.picture ){
-      msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
-      msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
+      msg.picture = msg.picture.replace(/GAME_LEVEL/g, game.level);
+      msg.picture = msg.picture.replace(/GAME_IMAGE/g, game.img);
     }
     if( msg.name ){
       if( req.session.passport.user.name ){
-        msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+        msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.name = msg.name.replace('NUMBER', num);
-      msg.name = msg.name.replace('GAME_LEVEL', game.level);
-      msg.name = msg.name.replace('GAME_IMAGE', game.img);
+      msg.name = msg.name.replace(/NUMBER/g, num);
+      msg.name = msg.name.replace(/GAME_LEVEL/g, game.level);
+      msg.name = msg.name.replace(/GAME_IMAGE/g, game.img);
     }
     if( msg.caption ){
       if( req.session.passport.user.name ){
-        msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+        msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.caption = msg.caption.replace('NUMBER', num);
-      msg.caption = msg.caption.replace('GAME_LEVEL', game.level);
-      msg.caption = msg.caption.replace('GAME_IMAGE', game.img);
+      msg.caption = msg.caption.replace(/NUMBER/g, num);
+      msg.caption = msg.caption.replace(/GAME_LEVEL/g, game.level);
+      msg.caption = msg.caption.replace(/GAME_IMAGE/g, game.img);
     }
     if( msg.description ){
       if( req.session.passport.user.name ){
-        msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+        msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.description = msg.description.replace('NUMBER', num);
-      msg.description = msg.description.replace('GAME_LEVEL', game.level);
-      msg.description = msg.description.replace('GAME_IMAGE', game.img);
+      msg.description = msg.description.replace(/NUMBER/g, num);
+      msg.description = msg.description.replace(/GAME_LEVEL/g, game.level);
+      msg.description = msg.description.replace(/GAME_IMAGE/g, game.img);
     }
     if( msg.message ){
       if( req.session.passport.user.name ){
-        msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
+        msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.message = msg.message.replace('NUMBER', num);
-      msg.message = msg.message.replace('GAME_LEVEL', game.level);
-      msg.message = msg.message.replace('GAME_IMAGE', game.img);
+      msg.message = msg.message.replace(/NUMBER/g, num);
+      msg.message = msg.message.replace(/GAME_LEVEL/g, game.level);
+      msg.message = msg.message.replace(/GAME_IMAGE/g, game.img);
     }
     
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
@@ -976,16 +976,16 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
       
         var msg = req.session.app.shareMsg;
         if( msg.name && req.session.passport.user.name ){
-          msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+          msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
         }
         if( msg.caption && req.session.passport.user.name ){
-          msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+          msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
         }
         if( msg.description && req.session.passport.user.name ){
-          msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+          msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
         }
         if( msg.message && req.session.passport.user.name ){
-          msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
+          msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
         }
         
         if( msg.redirect_uri ){
@@ -1059,40 +1059,40 @@ app.get('/fb/logdeletes/:num', function (req, res) {
           var game = gamify(total);
           var msg = req.session.app.shareResultsMsg;
           if( msg.picture ){
-            msg.picture = msg.picture.replace('GAME_LEVEL', game.level);
-            msg.picture = msg.picture.replace('GAME_IMAGE', game.img);
+            msg.picture = msg.picture.replace(/GAME_LEVEL/g, game.level);
+            msg.picture = msg.picture.replace(/GAME_IMAGE/g, game.img);
           }
           if( msg.name ){
             if( req.session.passport.user.name ){
-              msg.name = msg.name.replace('DISPLAY_NAME', req.session.passport.user.name);
+              msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
             }
-            msg.name = msg.name.replace('NUMBER', num);
-            msg.name = msg.name.replace('GAME_LEVEL', game.level);
-            msg.name = msg.name.replace('GAME_IMAGE', game.img);
+            msg.name = msg.name.replace(/NUMBER/g, num);
+            msg.name = msg.name.replace(/GAME_LEVEL/g, game.level);
+            msg.name = msg.name.replace(/GAME_IMAGE/g, game.img);
           }
           if( msg.caption ){
             if( req.session.passport.user.name ){
-              msg.caption = msg.caption.replace('DISPLAY_NAME', req.session.passport.user.name);
+              msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
             }
-            msg.caption = msg.caption.replace('NUMBER', num);
-            msg.caption = msg.caption.replace('GAME_LEVEL', game.level);
-            msg.caption = msg.caption.replace('GAME_IMAGE', game.img);
+            msg.caption = msg.caption.replace(/NUMBER/g, num);
+            msg.caption = msg.caption.replace(/GAME_LEVEL/g, game.level);
+            msg.caption = msg.caption.replace(/GAME_IMAGE/g, game.img);
           }
           if( msg.description ){
             if( req.session.passport.user.name ){
-              msg.description = msg.description.replace('DISPLAY_NAME', req.session.passport.user.name);
+              msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
             }
-            msg.description = msg.description.replace('NUMBER', num);
-            msg.description = msg.description.replace('GAME_LEVEL', game.level);
-            msg.description = msg.description.replace('GAME_IMAGE', game.img);
+            msg.description = msg.description.replace(/NUMBER/g, num);
+            msg.description = msg.description.replace(/GAME_LEVEL/g, game.level);
+            msg.description = msg.description.replace(/GAME_IMAGE/g, game.img);
           }
           if( msg.message ){
             if( req.session.passport.user.name ){
-              msg.message = msg.message.replace('DISPLAY_NAME', req.session.passport.user.name);
+              msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
             }
-            msg.message = msg.message.replace('NUMBER', num);
-            msg.message = msg.message.replace('GAME_LEVEL', game.level);
-            msg.message = msg.message.replace('GAME_IMAGE', game.img);
+            msg.message = msg.message.replace(/NUMBER/g, num);
+            msg.message = msg.message.replace(/GAME_LEVEL/g, game.level);
+            msg.message = msg.message.replace(/GAME_IMAGE/g, game.img);
           }
           var gamifyMsg = '';
           if( msg.gamifyMsg ){
@@ -1100,11 +1100,11 @@ app.get('/fb/logdeletes/:num', function (req, res) {
             delete msg.gamifyMsg;
             
             if( req.session.passport.user.name ){
-              gamifyMsg = gamifyMsg.replace('DISPLAY_NAME', req.session.passport.user.name);
+              gamifyMsg = gamifyMsg.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
             }
-            gamifyMsg = gamifyMsg.replace('NUMBER', num);
-            gamifyMsg = gamifyMsg.replace('GAME_LEVEL', game.level);
-            gamifyMsg = gamifyMsg.replace('GAME_IMAGE', game.img);
+            gamifyMsg = gamifyMsg.replace(/NUMBER/g, num);
+            gamifyMsg = gamifyMsg.replace(/GAME_LEVEL/g, game.level);
+            gamifyMsg = gamifyMsg.replace(/GAME_IMAGE/g, game.img);
           }
           if( msg.redirect_uri ){
             msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
