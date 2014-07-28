@@ -1,44 +1,44 @@
 var http                = require('http');
-var express           	= require('express');
-var expressValidator  	= require('express-validator');
-var hbs               	= require('hbs');
-var jselect           	= require('JSONSelect');
-//var jw               	= require('jwt-simple');
-var mongoose          	= require('mongoose');
-var nodemailer        	= require("nodemailer");
-var redis             	= require('redis');
-var RedisStore        	= require('connect-redis')(express);
-var rest              	= require('restler');
-var _                 	= require('underscore');
-var depRegistrar      	= require('./registrars/dependencyRegistrar');
-var google           	= require('./lib/google');
-var settings         	= require('./lib/settings');
-var loggerService    	= require('./services/logger').create(settings.app.logging);;
-var async 	      	= require('async');
+var express             = require('express');
+var expressValidator    = require('express-validator');
+var hbs                 = require('hbs');
+var jselect             = require('JSONSelect');
+//var jw                 = require('jwt-simple');
+var mongoose            = require('mongoose');
+var nodemailer          = require("nodemailer");
+var redis               = require('redis');
+var RedisStore          = require('connect-redis')(express);
+var rest                = require('restler');
+var _                   = require('underscore');
+var depRegistrar        = require('./registrars/dependencyRegistrar');
+var google             = require('./lib/google');
+var settings           = require('./lib/settings');
+var loggerService      = require('./services/logger').create(settings.app.logging);
+var async           = require('async');
 
 mongoose.connect(settings.app.db);
-var User	      	= require('./lib/models/User.js');
-var App     	      	= require('./lib/models/App.js');
-var Checkout 	      	= require('./lib/models/Checkout.js');
-var Purchase 	      	= require('./lib/models/Purchase.js');
-var createId 	      	= require('./lib/models').createId;
+var User          = require('./lib/models/User.js');
+var App               = require('./lib/models/App.js');
+var Checkout           = require('./lib/models/Checkout.js');
+var Purchase           = require('./lib/models/Purchase.js');
+var createId           = require('./lib/models').createId;
 
 var app = module.exports = express();
-var GoogleStrategy 	= require('passport-google-oauth').OAuth2Strategy;;
-var FacebookStrategy 	= require('passport-facebook').Strategy;
-var passport 		= require('passport');
-var paypal 		= require('./lib/paypal');
+var GoogleStrategy   = require('passport-google-oauth').OAuth2Strategy;
+var FacebookStrategy   = require('passport-facebook').Strategy;
+var passport     = require('passport');
+var paypal     = require('./lib/paypal');
 var FB = require('fb');
 
 paypal.init(settings.paypal);
 
 var paymentGateways = {
-	'google': function(user, app, purchaseKey, cb) {
-		initCheckoutWithGoogle(user, app, purchaseKey, cb);
-	}
-	, 'paypal': function(user, app, purchaseKey, cb) {
-		initCheckoutWithPaypal(user, app, purchaseKey, cb); 
-	}
+  'google': function(user, app, purchaseKey, cb) {
+    initCheckoutWithGoogle(user, app, purchaseKey, cb);
+  }
+  , 'paypal': function(user, app, purchaseKey, cb) {
+    initCheckoutWithPaypal(user, app, purchaseKey, cb); 
+  }
 };
 
 var transport = nodemailer.createTransport(
@@ -55,11 +55,11 @@ var transport = nodemailer.createTransport(
 );
 
 hbs.registerHelper('isNotGoogleCheckout', function(name, options) {
-	if (name !== 'google') {
-		return options.fn(this);
-	} else {
-		return options.inverse(this);
-	}
+  if (name !== 'google') {
+    return options.fn(this);
+  } else {
+    return options.inverse(this);
+  }
 }); 
 
 
@@ -144,9 +144,9 @@ app.get('/', function (req, res) {
 app.get('/postauth', function (req, res) {
   if(typeof(req.session.passport.user) !== 'undefined'){
   
-		//console.log('req.session.passport.user: %s', JSON.stringify(req.session.passport.user, null, 2));
-		//console.log('req.user: %s', JSON.stringify(req.user, null, 2));
-		//console.log('SESSION INSPECTION AT POST AUTH: %s', JSON.stringify(req.session, null, 2));
+    //console.log('req.session.passport.user: %s', JSON.stringify(req.session.passport.user, null, 2));
+    //console.log('req.user: %s', JSON.stringify(req.user, null, 2));
+    //console.log('SESSION INSPECTION AT POST AUTH: %s', JSON.stringify(req.session, null, 2));
     app.logger.info('Saved email: ' + req.session.passport.user.email);
     res.redirect('/buy/' + req.session.appId + '?purchaseKey=' + req.session.purchaseKey);
 
@@ -167,11 +167,11 @@ passport.deserializeUser(function(obj, done) {
 
 
 function getUser(email, provider, profileId, cb) {
-	var q = {
-		email : email
-	};
-	q[provider + '.email'] = profileId;
-	User.findOne(q).exec(cb);
+  var q = {
+    email : email
+  };
+  q[provider + '.email'] = profileId;
+  User.findOne(q).exec(cb);
 }
 
 function createUser(provider, email, profile, accessToken, cb) {
@@ -214,32 +214,32 @@ var updateGoogleAccessToken = updateAccessToken.bind(this, 'google');
 var updateFacebookAccessToken = updateAccessToken.bind(this, 'facebook');
 
 passport.use(new GoogleStrategy({
-	clientID: settings.google.appId,
- 	clientSecret: settings.google.appSecret,
- 	callbackURL: settings.google.callbackURI
+  clientID: settings.google.appId,
+   clientSecret: settings.google.appSecret,
+   callbackURL: settings.google.callbackURI
 }, function(accessToken, refreshToken, profile, done) {
-	process.nextTick(function() {
-		var newUserEmail = "";
-		if (profile.emails.length) {
-			newUserEmail = profile.emails[0].value;
-		}
-		getUser(newUserEmail, 'google', profile.id, function(err, user) {
-			if (err) {
-				return done(err);
-			}
+  process.nextTick(function() {
+    var newUserEmail = "";
+    if (profile.emails.length) {
+      newUserEmail = profile.emails[0].value;
+    }
+    getUser(newUserEmail, 'google', profile.id, function(err, user) {
+      if (err) {
+        return done(err);
+      }
 
-			if (!user) {
+      if (!user) {
         return createUserWithGoogleInfo(newUserEmail, profile, accessToken, function(err, u) {
-					done(err, u);
-				});
-			}
+          done(err, u);
+        });
+      }
 
       return updateGoogleAccessToken(user, accessToken, profile, function(err) {
-				done(err, user);
-			});
+        done(err, user);
+      });
 
-		});
-	});
+    });
+  });
 }));
 
 passport.use(new FacebookStrategy({
@@ -307,20 +307,20 @@ app.get('/auth/facebook/callback',
 });
 
 app.get('/auth/providers', function(req, res) {
-	//console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
+  //console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
   req.session.from = 'buy';
-	res.render('oauthProviders', {
-		providers: [{
-			name: 'google'
-			, title: 'Google+'
-			, path: '/auth/google'
-		}
-		, {
-			name: 'facebook'
-			, title: 'Facebook'
-			, path: '/auth/facebook'
-		}]
-	})
+  res.render('oauthProviders', {
+    providers: [{
+      name: 'google'
+      , title: 'Google+'
+      , path: '/auth/google'
+    }
+    , {
+      name: 'facebook'
+      , title: 'Facebook'
+      , path: '/auth/facebook'
+    }]
+  })
 });
 
 app.get('/logout', function(req, res){
@@ -329,193 +329,200 @@ app.get('/logout', function(req, res){
 });
 
 app.get('/checkout/paymentConfirmed', function(req, res) {
-	var tmpldata = {payerName: req.session.payerName, transaction: req.session.transaction};
-	res.render('paymentConfirmed', tmpldata);
+  var tmpldata = {payerName: req.session.payerName, transaction: req.session.transaction};
+  res.render('paymentConfirmed', tmpldata);
 });
 
 app.get('/initCheckout/:paymentGateway', function(req, res) {
-	
-	var gateway = paymentGateways[req.params.paymentGateway]
-	, purchaseKey = req.session.purchaseKey
-	, appId = req.session.appId
-	, user = req.session.passport.user
-	;
+  
+  var gateway = paymentGateways[req.params.paymentGateway]
+  , purchaseKey = req.session.purchaseKey
+  , appId = req.session.appId
+  , user = req.session.passport.user
+  ;
 
-	if(!gateway) {
-		return res.send(404);
-	}
-	getAppById(appId, function(err, app) {
-		if(err || !app) {
-			return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
-		}
-		gateway(user, app, purchaseKey, function(err, resp) {
-			if (err) {
-				return res.send({ success : false, error : err });
-			}
-			res.redirect(resp.redirect);
-		});		
-	});
+  if(!gateway) {
+    return res.send(404);
+  }
+  getAppById(appId, function(err, app) {
+    if(err || !app) {
+      return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
+    }
+    gateway(user, app, purchaseKey, function(err, resp) {
+      if (err) {
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        return res.send({success: false, error: err});
+      }
+      res.redirect(resp.redirect);
+    });    
+  });
 });
 
 function getAppById(appId, cb) {
-	App.findById(appId, function(err, app) {
-		cb(err, app);
-	});
+  App.findById(appId, function(err, app) {
+    cb(err, app);
+  });
 }
 
 function getPurchase(profileId, appId, cb) {
-	
-	var q = {
+  
+  var q = {
     googleId: profileId,
     app: appId
- 	};
- 	
-	Purchase.find(q, null, {skip: 0, limit: 1, sort: {created: -1}}, function(err, purchases) {
-		
-		if(!purchases) {
-			purchases = [];
-		}
-		
-		cb(err, purchases[0]);
-		
-	});
-	
+   };
+   
+  Purchase.find(q, null, {skip: 0, limit: 1, sort: {created: -1}}, function(err, purchases) {
+    
+    if(!purchases) {
+      purchases = [];
+    }
+    
+    cb(err, purchases[0]);
+    
+  });
+  
 }
 
 function purchaseToRevalidate(purchase, purchaseKey, cb) {
-	purchase.purchaseKey = purchaseKey;
-	purchase.mode = 'Revalidate';
-	purchase.save(cb);
+  purchase.purchaseKey = purchaseKey;
+  purchase.mode = 'Revalidate';
+  purchase.save(cb);
 }
 
 function initCheckoutWithPaypal(user, app, purchaseKey, cb) {
-	
-	var orderId = createId()
-	, price = app.price
-	, email = user.email
-	, description = app.purchaseMsg
+  
+  var orderId = createId()
+  , price = app.price
+  , email = user.email
+  , description = app.purchaseMsg
 
-	paypal.create(email, orderId, app, function(err, order, redirectURL) {
-		if(err) {
-			return cb(err);
-		}
-		insertNewPurchase(user, app._id.toString(), purchaseKey, order.paymentId, orderId);
-		cb(null, {redirect: redirectURL});
-	});
+  paypal.create(email, orderId, app, function(err, order, redirectURL) {
+    if(err) {
+      return cb(err);
+    }
+    insertNewPurchase(user, app._id.toString(), purchaseKey, order.paymentId, orderId);
+    cb(null, {redirect: redirectURL});
+  });
 }
 
 
 function initCheckoutWithGoogle(user, app, purchaseKey, cb) {
-	google.checkout(__dirname + '/lib/google/checkout.xml', {
-		app : app,
-		purchaseKey : purchaseKey,
-		userId : user._id,
-		googleId : getProfileId(user)
-	}, cb);
+  google.checkout(__dirname + '/lib/google/checkout.xml', {
+    app : app,
+    purchaseKey : purchaseKey,
+    userId : user._id,
+    googleId : getProfileId(user)
+  }, cb);
 }
 
 function getProfileId(user) {
-	if(!_.isEmpty(user.google)) {
-		return user.google.email;
-	}
-	return user.facebook.email;
+  if(!_.isEmpty(user.google)) {
+    return user.google.email;
+  }
+  return user.facebook.email;
 }
 
 function respondError(reason, req, res, err) {
-	console.error('IP: %s, Reason: %s, Error Object: %s', req.ip, reason, JSON.stringify(err, null, 2));
-	res.render('error', view({ layout: false }));
+  console.error('IP: %s, Reason: %s, Error Object: %s', req.ip, reason, JSON.stringify(err, null, 2));
+  res.render('error', view({ layout: false }));
 }
 
 app.get('/' + settings.paypal.returnPath, function(req, res) {
-	
-	var orderId = req.query.orderId
-	, payerId = req.query.PayerID
-	;
-	
-	Purchase.findOne({
-		orderId: orderId
-	}).populate('app').exec(function(err, purchase) {
-		
-		if(err) {
-			return respondError('Error while looking for purchase', req, res, err);
-		}
-		
-		paypal.execute(purchase.orderNumber, payerId, function(err, state, dateTime, payer, transaction) {
-			
-			if(err) {
-				return respondError('Error while executing paypal purchase', req, res, err);
-			}
-			req.session.transaction = transaction;
-			req.session.payerName = payer.info.firstName;
-			req.session.save(function() {
-				markPurchaseAsComplete(purchase.orderNumber);
-				res.redirect('/checkout/paymentConfirmed');				
-			});
-		});
-		
-	});
-	
+  
+  var orderId = req.query.orderId
+  , payerId = req.query.PayerID
+  ;
+  
+  Purchase.findOne({
+    orderId: orderId
+  }).populate('app').exec(function(err, purchase) {
+    
+    if(err) {
+      return respondError('Error while looking for purchase', req, res, err);
+    }
+    
+    paypal.execute(purchase.orderNumber, payerId, function(err, state, dateTime, payer, transaction) {
+      
+      if(err) {
+        return respondError('Error while executing paypal purchase', req, res, err);
+      }
+      req.session.transaction = transaction;
+      req.session.payerName = payer.info.firstName;
+      req.session.save(function() {
+        markPurchaseAsComplete(purchase.orderNumber);
+        res.redirect('/checkout/paymentConfirmed');        
+      });
+    });
+    
+  });
+  
 });
 
 app.get('/buy/:id', function (req, res) {
-	
+  
   var purchaseKey = req.query.purchaseKey
   , user = req.session.passport.user
   ;
-	
+  
   if (!req.isAuthenticated()) {
-    req.session.appId = req.params.id;
-    req.session.purchaseKey = purchaseKey;
-    return req.session.save(function() {
-			return res.redirect('/auth/providers');    	
+    getAppById(req.params.id, function(err, app) {
+      if(err || !app) {
+        return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
+      }
+      req.session.app = app;
+      req.session.appId = req.params.id;
+      req.session.purchaseKey = purchaseKey;
+      return req.session.save(function() {
+        return res.redirect('/auth/providers');      
+      });
     });
   }
   
   async.waterfall([getAppById.bind(this, req.session.appId)
-	  , function(app, cb) {
-	  	if(!app) {
-	  		return cb({message: 'APP_NOT_FOUND'});
-	  	}
-	  	getPurchase(getProfileId(user), app._id, function(err, purchase) {
-	  		if(err) {
-	  			return cb({message: 'ERROR_IN_FETCHING_PURCHASE'})
-	  		}
-	  		cb(err, app, purchase);
-	  	});
-	  }
-	  , function(app, purchase, cb) {
-	  	if(!purchase) {
-	  		return cb({message: 'PURCHASE_NOT_FOUND'});
-	  	}
-	  	if(purchase.status === 'COMPLETE') {
-	  		return cb({message: 'PURCHASE_ALREADY_COMPLETE', purchase: purchase, app: app});
-	  	}
-	  	return cb({message: 'PURCHASE_NOT_YET_COMPLETE'});
-	  }]
-	  , function(err) {
-	  	if( (err && !err.message) || err.message === 'APP_NOT_FOUND' || err.message === 'ERROR_IN_FETCHING_PURCHASE') {
-	  		return respondError(err.message ? err.message : 'Error while fetching app from db', req, res, err);
-	  	}
-	  	if(err.message === 'PURCHASE_ALREADY_COMPLETE') {
-	  		return purchaseToRevalidate(err.purchase, purchaseKey, function() {
-	  			req.logout(); // reset login session for security
+    , function(app, cb) {
+      if(!app) {
+        return cb({message: 'APP_NOT_FOUND'});
+      }
+      getPurchase(getProfileId(user), app._id, function(err, purchase) {
+        if(err) {
+          return cb({message: 'ERROR_IN_FETCHING_PURCHASE'})
+        }
+        cb(err, app, purchase);
+      });
+    }
+    , function(app, purchase, cb) {
+      if(!purchase) {
+        return cb({message: 'PURCHASE_NOT_FOUND'});
+      }
+      if(purchase.status === 'COMPLETE') {
+        return cb({message: 'PURCHASE_ALREADY_COMPLETE', purchase: purchase, app: app});
+      }
+      return cb({message: 'PURCHASE_NOT_YET_COMPLETE'});
+    }]
+    , function(err) {
+      if( (err && !err.message) || err.message === 'APP_NOT_FOUND' || err.message === 'ERROR_IN_FETCHING_PURCHASE') {
+        return respondError(err.message ? err.message : 'Error while fetching app from db', req, res, err);
+      }
+      if(err.message === 'PURCHASE_ALREADY_COMPLETE') {
+        return purchaseToRevalidate(err.purchase, purchaseKey, function() {
+          req.logout(); // reset login session for security
           app.logger.info('Revalidated User: PurchaseKey: ' + purchaseKey);
           return res.render( 'revalidate', view({ layout: false, app: err.app }));
-	  		});
-	  	}
-	  	if(err.message === 'PURCHASE_NOT_FOUND' || err.message === 'PURCHASE_NOT_YET_COMPLETE') {
-				return res.redirect('/payment/gateways');	  		
-	  	}
-	  });
+        });
+      }
+      if(err.message === 'PURCHASE_NOT_FOUND' || err.message === 'PURCHASE_NOT_YET_COMPLETE') {
+        return res.redirect('/payment/gateways');        
+      }
+    });
 });
 
 app.get('/payment/gateways', function(req, res) {
-	getAppById(req.session.appId, function(err, app) {
-		if(err || !app) {
-			return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
-		}
-		res.render('paymentOptions', {paymentOptions: settings.paymentOptions, isGoogleUser: true, app: app});
-	});
+  getAppById(req.session.appId, function(err, app) {
+    if(err || !app) {
+      return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
+    }
+    res.render('paymentOptions', {paymentOptions: settings.paymentOptions, isGoogleUser: true, app: app});
+  });
 });
 
 app.get('/purchase/check/:key', function (req, res) {
@@ -526,11 +533,10 @@ app.get('/purchase/check/:key', function (req, res) {
     })
     .populate('app')
     .exec(function (err, purchase) {
-    	
+      
       if (err) {
-        return res.send({
-          success: false
-        });
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        return res.send({success: false});
       }
 
       if (!purchase || purchase.status !== 'COMPLETE') {
@@ -549,8 +555,8 @@ app.get('/purchase/check/:key', function (req, res) {
 });
 
 function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
-	app.logger.info('NEW ORDER: ' + token); 
-	var p = {
+  app.logger.info('NEW ORDER: ' + token); 
+  var p = {
     orderNumber:  token,
     app:          appId,
     purchaseKey:  purchaseKey,
@@ -558,7 +564,7 @@ function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
     googleId:     getProfileId(user),
     status:       'PENDING',
     orderId: orderId || createId()
- 	};
+   };
   var purchase = new Purchase(p);
   purchase.save();
 }
@@ -584,7 +590,7 @@ function markPurchaseAsComplete(token) {
         to: settings.app.email,
         subject: 'KickassAuth Friend Remover Order: ' + token,
         text: '\n created: ' + purchase.created
-            + '\n orderId:	' + purchase.orderId
+            + '\n orderId:  ' + purchase.orderId
             + '\n orderNumber: ' + purchase.orderNumber
           //  + '\n app: ' + purchase.app._id.toString()
             + '\n purchaseKey: ' + purchase.purchaseKey
@@ -643,7 +649,7 @@ app.post('/google/notify', function (req, res) {
       checkout.save();
     },
     function (err, details) {
-    	
+      
       if (details.merchantData.length > 0) {
         app.logger.info('NEW ORDER: ' + details.orderNumber); 
 
@@ -663,7 +669,7 @@ app.post('/google/notify', function (req, res) {
         app.logger.info('ORDER STATE of ' + details.orderNumber + ' changed to ' + details.orderStateData['new-fulfillment-order-state'] + ' + ' + details.orderStateData['new-financial-order-state']);
 
         if (details.orderStateData['new-fulfillment-order-state'] === 'DELIVERED') {
-        	markPurchaseAsComplete(details.orderNumber);
+          markPurchaseAsComplete(details.orderNumber);
         }
 
       } else if (details.riskNotification) {
@@ -677,11 +683,11 @@ app.post('/google/notify', function (req, res) {
 
 app.get('/fb/checkauth/:id/:key', function (req, res) {
   
-  App.findById(req.params.id, function(err, app) {
+  getAppById(req.params.id, function(err, app) {
     if(err || !app) {
-      return res.send({loggedIn: false});
+      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      return res.send({success: false, loggedIn: false});
     }
-    
     req.session.app = app;
     req.session.appId = req.params.id;
     req.session.purchaseKey = req.params.key;
@@ -719,6 +725,7 @@ app.get('/fb/friends', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -729,9 +736,10 @@ app.get('/fb/friends', function (req, res) {
       access_token:   req.session.passport.user.facebook.accessToken
     }, function (result) {
       if(!result || result.error) {
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- friends failed');
         return res.send({success: false, error: result.error || 'error'});
       }
-      return res.send({success:true, friends:result});
+      return res.send({success: true, friends:result});
     });
   }
 });
@@ -743,6 +751,7 @@ app.get('/fb/wallpost', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -764,6 +773,7 @@ app.get('/fb/wallpost', function (req, res) {
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
     FB.api('me/feed', 'post', msg, function (result) {
       if(!result || result.error) {
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- wallpost failed');
         return res.send({success: false, error: result.error || 'error'});
       }
       User.updateAppStats(req.session.passport.user.email, 
@@ -772,6 +782,7 @@ app.get('/fb/wallpost', function (req, res) {
         'has_shared', true, 
         function(err, updatedUser) {
           if(err || !updatedUser) {
+            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
             return res.send({success: false});
           }
           return res.send({success: true, has_shared: true});
@@ -829,6 +840,7 @@ app.get('/fb/shareresults/:num', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -884,6 +896,7 @@ app.get('/fb/shareresults/:num', function (req, res) {
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
     FB.api('me/feed', 'post', msg, function (result) {
       if(!result || result.error) {
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- shareresults failed');
         return res.send({success: false, error: result.error || 'error'});
       }
       return res.send({success: true});
@@ -898,6 +911,7 @@ app.get('/fb/wallpost/save', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -908,6 +922,9 @@ app.get('/fb/wallpost/save', function (req, res) {
         req.session.appId,
         'has_shared', true, 
         function(err, updatedUser) {
+          if(err || !updatedUser) {
+            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+          }
         }
       );
     }
@@ -923,6 +940,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -933,6 +951,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
     }, function(err, u) {
       
       if(err || !u) {
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
       
@@ -986,7 +1005,8 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       || typeof(req.session.passport.user)==='undefined' 
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
-      
+    
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -994,7 +1014,8 @@ app.get('/fb/logdeletes/:num', function (req, res) {
     var num = 0;
     try{
       num = parseInt(req.params.num);
-    }catch(ee){
+    }catch(err){
+      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false});
     }
   
@@ -1004,6 +1025,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
     }, function(err, u) {
       
       if(err || !u) {
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
       
@@ -1020,6 +1042,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
         'total', total,
         function(err, updatedUser) {
           if(err || !updatedUser) {
+            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
             return res.send({success: false});
           }
 
