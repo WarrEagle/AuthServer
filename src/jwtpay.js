@@ -98,14 +98,14 @@ app.configure(function () {
       secret: 'some secret',
       store: new RedisStore(),
       cookie: {
-        maxAge: 1000 * 60 * 10//10 minutes
+        maxAge: 1000 * 60 * 30//30 minutes
       }
     }));
   } else {
     app.use(express.session({
       secret: 'some secret',
       cookie: {
-        maxAge: 1000 * 60 * 10//10 minutes
+        maxAge: 1000 * 60 * 30//30 minutes
       }
     }));
   }
