@@ -530,6 +530,28 @@ app.get('/payment/gateways', function(req, res) {
   });
 });
 
+app.get('/purchase/debug/:key', function (req, res) {
+  if( !req.isAuthenticated() 
+      || typeof(req.session.passport.user)==='undefined' 
+      || typeof(req.session.passport.user.facebook)==='undefined'
+      || typeof(req.session.appId)==='undefined' ) {
+    return res.send({success: false, loggedIn: false});
+  }
+  
+  Purchase.findOne({
+    purchaseKey: req.params.key
+  })
+  .populate('app')
+  .exec(function (err, purchase) {
+    
+    if (err) {
+      return res.send({success: false, error: err});
+    }
+    
+    return res.send({success: true, purchase: purchase, app: purchase.app});
+  });
+});
+
 app.get('/purchase/check/:key', function (req, res) {
   if( !req.isAuthenticated() 
       || typeof(req.session.passport.user)==='undefined' 
@@ -564,7 +586,7 @@ app.get('/purchase/check/:key', function (req, res) {
       }
       
       var user = u.toJSON();
-      var stats = user[req.session.appId];
+      var stats = user[settings.app.stats];
       if( typeof(stats)==='undefined' ){
         stats = false;
       }
@@ -775,7 +797,7 @@ app.get('/fb/wallpost', function (req, res) {
       User.updateAppStats(req.session.passport.user.email, 
         'facebook', 
         req.session.passport.user.facebook.email, 
-        req.session.appId,
+        settings.app.stats,
         'has_shared', true, 
         function(err, updatedUser) {
           if(err || !updatedUser) {
@@ -917,8 +939,8 @@ app.get('/fb/wallpost/save', function (req, res) {
       User.updateAppStats(req.session.passport.user.email, 
         'facebook', 
         req.session.passport.user.facebook.email, 
-        req.session.appId,
-        'has_shared', true, 
+        settings.app.stats,
+        'has_shared', req.query.post_id, 
         function(err, updatedUser) {
           if(err || !updatedUser) {
             app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
@@ -955,9 +977,9 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
       
       var user = u.toJSON();
       var has_shared = false;
-      var stats = user[req.session.appId];
+      var stats = user[settings.app.stats];
       if( typeof(stats)!=='undefined' && typeof(stats.has_shared)!=='undefined' ){
-        has_shared = stats.has_shared;
+        has_shared = (stats.has_shared!==false);
       }
       
       if( has_shared ){
@@ -1029,7 +1051,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       
       var user = u.toJSON();
       var total = num;
-      var stats = user[req.session.appId];
+      var stats = user[settings.app.stats];
       if( typeof(stats)!=='undefined' && typeof(stats.total)!=='undefined' ){
         total += parseInt(stats.total);
       }
@@ -1037,7 +1059,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       User.updateAppStats(req.session.passport.user.email, 
         'facebook', 
         req.session.passport.user.facebook.email, 
-        req.session.appId,
+        settings.app.stats,
         'total', total,
         function(err, updatedUser) {
           if(err || !updatedUser) {

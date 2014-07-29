@@ -12,6 +12,7 @@
         "accessLogs": true,
         "serverId": "development"
       },
+      "stats": "5398cada8c29d0f1ddb714b1",
       "email": "michaelquale+kauth@gmail.com" 
     },
     "google": {
@@ -63,6 +64,7 @@
         "accessLogs": false,
         "serverId": "production"
       },
+      "stats": "5398cada8c29d0f1ddb714b1",
       "email": "michaelquale+kauth@gmail.com" 
     },
     "google": {
