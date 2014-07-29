@@ -60,7 +60,7 @@ hbs.registerHelper('isNotGoogleCheckout', function(name, options) {
 process.on('uncaughtException', function (err) {
   app.logger.fatal('UNCAUGHT EXCEPTION', [err]);
 
-  if (process.env.NODE_ENV == 'production') {
+  if (settings.app.emailNotify) {
     transport.sendMail({
       from: 'no-reply@kickasschromeapps.com',
       to: settings.app.email,
@@ -336,7 +336,7 @@ app.get('/logout', function(req, res){
 });
 
 app.get('/debug', function(req, res){
-  if (process.env.NODE_ENV == 'production') {
+  if (!settings.app.showDebugInfo) {
     res.send({status: "ok"});
   } else {
     res.send({isAuthenticated: req.isAuthenticated(), user: req.user, session: req.session});
@@ -531,25 +531,27 @@ app.get('/payment/gateways', function(req, res) {
 });
 
 app.get('/purchase/debug/:key', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-    return res.send({success: false, loggedIn: false});
-  }
-  
-  Purchase.findOne({
-    purchaseKey: req.params.key
-  })
-  .populate('app')
-  .exec(function (err, purchase) {
-    
-    if (err) {
-      return res.send({success: false, error: err});
+  if (!settings.app.showDebugInfo) {
+    res.send({status: "ok"});
+  } else {
+    if( !req.isAuthenticated() 
+        || typeof(req.session.passport.user)==='undefined' 
+        || typeof(req.session.passport.user.facebook)==='undefined'
+        || typeof(req.session.appId)==='undefined' ) {
+      return res.send({success: false, loggedIn: false});
     }
     
-    return res.send({success: true, purchase: purchase, app: purchase.app});
-  });
+    Purchase.findOne({
+      purchaseKey: req.params.key
+    })
+    .populate('app')
+    .exec(function (err, purchase) {
+      if (err) {
+        return res.send({success: false, error: err});
+      }
+      return res.send({success: true, purchase: purchase});
+    });
+  }
 });
 
 app.get('/purchase/check/:key', function (req, res) {
@@ -638,16 +640,18 @@ function markPurchaseAsComplete(token) {
       app.logger.error('PURCHASE NOT FOUND: ' + token);
       return;
     }
-
-    if (process.env.NODE_ENV == 'production') {
+    
+    var appName = purchase.app.name + ' (' + purchase.app.language + ')';
+    app.logger.info('NEW ORDER COMPLETE: ' + token + ' - APP: ' + appName);
+    if (settings.app.emailNotify) {
       transport.sendMail({
         from: 'no-reply@kickasschromeapps.com',
         to: settings.app.email,
-        subject: 'KickassAuth Friend Remover Order: ' + token,
+        subject: 'KickassAuth ' + appName + ' Order: ' + token,
         text: '\n created: ' + purchase.created
             + '\n orderId:  ' + purchase.orderId
             + '\n orderNumber: ' + purchase.orderNumber
-          //  + '\n app: ' + purchase.app._id.toString()
+            + '\n app: ' + appName
             + '\n purchaseKey: ' + purchase.purchaseKey
             + '\n googleId: ' + purchase.googleId
           //  + '\n user: ' + purchase.user._id.toString()
@@ -659,7 +663,6 @@ function markPurchaseAsComplete(token) {
         }
       });
     }
-    app.logger.info('NEW ORDER COMPLETE: ' + token);
 
     purchase.status = 'COMPLETE';
     purchase.save(function(){
@@ -1143,7 +1146,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
 
 var port = process.argv[2] || 3000;
 
-if (process.env.NODE_ENV == 'production') {
+if (settings.app.emailNotify) {
   transport.sendMail({
     from: 'no-reply@kickasschromeapps.com',
     to: settings.app.email,
