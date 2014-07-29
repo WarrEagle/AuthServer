@@ -37,11 +37,11 @@ userSchema.statics.updateToken = function (email, provider, token, profile, call
 };
 
 
-userSchema.statics.updateAppStats = function (email, profileId, appId, statsName, statsValue, callback) {
+userSchema.statics.updateAppStats = function (email, provider, profileId, appId, statsName, statsValue, callback) {
 	var update = {$set: {}};
 	update.$set[appId + '.' + statsName] = statsValue;
 	var q = { email: email };
-	q['facebook.email'] = profileId;
+	q[provider + '.email'] = profileId;
   return this.collection.findAndModify(q, [], update, {'new': true}, function(err, updatedUser) {
   	if( typeof(callback) === 'function' )
       callback(err, updatedUser);

@@ -2,8 +2,6 @@ var http                = require('http');
 var express             = require('express');
 var expressValidator    = require('express-validator');
 var hbs                 = require('hbs');
-var jselect             = require('JSONSelect');
-//var jw                 = require('jwt-simple');
 var mongoose            = require('mongoose');
 var nodemailer          = require("nodemailer");
 var redis               = require('redis');
@@ -11,32 +9,28 @@ var RedisStore          = require('connect-redis')(express);
 var rest                = require('restler');
 var _                   = require('underscore');
 var depRegistrar        = require('./registrars/dependencyRegistrar');
-var google             = require('./lib/google');
-var settings           = require('./lib/settings');
-var loggerService      = require('./services/logger').create(settings.app.logging);
-var async           = require('async');
+var settings            = require('./lib/settings');
+var loggerService       = require('./services/logger').create(settings.app.logging);
+var async               = require('async');
 
 mongoose.connect(settings.app.db);
-var User          = require('./lib/models/User.js');
-var App               = require('./lib/models/App.js');
-var Checkout           = require('./lib/models/Checkout.js');
-var Purchase           = require('./lib/models/Purchase.js');
-var createId           = require('./lib/models').createId;
+var User                = require('./lib/models/User.js');
+var App                 = require('./lib/models/App.js');
+var Checkout            = require('./lib/models/Checkout.js');
+var Purchase            = require('./lib/models/Purchase.js');
+var createId            = require('./lib/models').createId;
 
 var app = module.exports = express();
-var GoogleStrategy   = require('passport-google-oauth').OAuth2Strategy;
-var FacebookStrategy   = require('passport-facebook').Strategy;
-var passport     = require('passport');
-var paypal     = require('./lib/paypal');
-var FB = require('fb');
+var GoogleStrategy      = require('passport-google-oauth').OAuth2Strategy;
+var FacebookStrategy    = require('passport-facebook').Strategy;
+var passport            = require('passport');
+var paypal              = require('./lib/paypal');
+var FB                  = require('fb');
 
 paypal.init(settings.paypal);
 
 var paymentGateways = {
-  'google': function(user, app, purchaseKey, cb) {
-    initCheckoutWithGoogle(user, app, purchaseKey, cb);
-  }
-  , 'paypal': function(user, app, purchaseKey, cb) {
+  'paypal': function(user, app, purchaseKey, cb) {
     initCheckoutWithPaypal(user, app, purchaseKey, cb); 
   }
 };
@@ -98,13 +92,23 @@ app.configure(function () {
   app.use(express.cookieParser());
   app.use(express.methodOverride());
   app.use(express.static(__dirname + '/public'));
-  app.use(express.session({
-    secret: 'some secret',
-    store: new RedisStore,
-    cookie: {
-      maxAge: 1000 * 60 * 10//10 minutes
-    }
-  }));
+  if (process.env.NODE_ENV === "production") {
+    // only use Redis on production
+    app.use(express.session({
+      secret: 'some secret',
+      store: new RedisStore(),
+      cookie: {
+        maxAge: 1000 * 60 * 10//10 minutes
+      }
+    }));
+  } else {
+    app.use(express.session({
+      secret: 'some secret',
+      cookie: {
+        maxAge: 1000 * 60 * 10//10 minutes
+      }
+    }));
+  }
   app.use(passport.initialize());
   app.use(passport.session());
   if (settings.app.logging.accessLogs) {
@@ -312,11 +316,12 @@ app.get('/auth/providers', function(req, res) {
   return req.session.save(function() {
     res.render('oauthProviders', {
       providers: [{
-        name: 'google'
-        , title: 'Google+'
-        , path: '/auth/google'
-      }
-      , {
+      //---temporary disable Google Auth, causing conflict on FB app
+      //  name: 'google'
+      //  , title: 'Google+'
+      //  , path: '/auth/google'
+      //}
+      //, {
         name: 'facebook'
         , title: 'Facebook'
         , path: '/auth/facebook'
@@ -328,6 +333,14 @@ app.get('/auth/providers', function(req, res) {
 app.get('/logout', function(req, res){
   req.logout();
   res.redirect('/');
+});
+
+app.get('/debug', function(req, res){
+  if (process.env.NODE_ENV == 'production') {
+    res.send({status: "ok"});
+  } else {
+    res.send({isAuthenticated: req.isAuthenticated(), user: req.user, session: req.session});
+  }
 });
 
 app.get('/checkout/paymentConfirmed', function(req, res) {
@@ -352,7 +365,7 @@ app.get('/initCheckout/:paymentGateway', function(req, res) {
     }
     gateway(user, app, purchaseKey, function(err, resp) {
       if (err) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false, error: err});
       }
       res.redirect(resp.redirect);
@@ -405,16 +418,6 @@ function initCheckoutWithPaypal(user, app, purchaseKey, cb) {
     insertNewPurchase(user, app._id.toString(), purchaseKey, order.paymentId, orderId);
     cb(null, {redirect: redirectURL});
   });
-}
-
-
-function initCheckoutWithGoogle(user, app, purchaseKey, cb) {
-  google.checkout(__dirname + '/lib/google/checkout.xml', {
-    app : app,
-    purchaseKey : purchaseKey,
-    userId : user._id,
-    googleId : getProfileId(user)
-  }, cb);
 }
 
 function getProfileId(user) {
@@ -528,32 +531,50 @@ app.get('/payment/gateways', function(req, res) {
 });
 
 app.get('/purchase/check/:key', function (req, res) {
-  Purchase
-    .findOne({
-      purchaseKey: req.params.key,
-      status: 'COMPLETE'
-    })
-    .populate('app')
-    .exec(function (err, purchase) {
+  Purchase.findOne({
+    purchaseKey: req.params.key,
+    status: 'COMPLETE'
+  })
+  .populate('app')
+  .exec(function (err, purchase) {
+    
+    if (err) {
+      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      return res.send({success: false});
+    }
+
+    User.findOne({
+      email: req.session.passport.user.email,
+      login: req.session.passport.user.login
+    }, function(err, u) {
       
-      if (err) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      if(err || !u) {
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
-
+      
+      var user = u.toJSON();
+      var stats = user[req.session.appId];
+      if( typeof(stats)==='undefined' ){
+        stats = false;
+      }
+    
       if (!purchase || purchase.status !== 'COMPLETE') {
         return res.send({
           success: true,
-          purchased: false
+          purchased: false,
+          stats: stats
         });
       }
 
       res.send({
         success: true,
         purchased: true,
+        stats: stats,
         includes: purchase.app.includes
       });
     });
+  });
 });
 
 function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
@@ -566,7 +587,7 @@ function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
     googleId:     getProfileId(user),
     status:       'PENDING',
     orderId: orderId || createId()
-   };
+  };
   var purchase = new Purchase(p);
   purchase.save();
 }
@@ -639,55 +660,12 @@ function markPurchaseAsComplete(token) {
 }
 
 
-app.post('/google/notify', function (req, res) {
-  google.handleNotification(
-    req,
-    res,
-    function (serial, xml) {
-      var checkout = new Checkout({
-        serial: serial,
-        xml: xml
-      });
-      checkout.save();
-    },
-    function (err, details) {
-      
-      if (details.merchantData.length > 0) {
-        app.logger.info('NEW ORDER: ' + details.orderNumber); 
-
-        var merchantData = details.merchantData[0];
-
-        var purchase = new Purchase({
-          orderNumber:  details.orderNumber,
-          app:          merchantData.appId,
-          purchaseKey:  merchantData.purchaseKey,
-          user:         merchantData.userId,
-          googleId:     merchantData.googleId,
-          status:       'PENDING' 
-        });
-        purchase.save();
-
-      } else if (details.orderStateData) {
-        app.logger.info('ORDER STATE of ' + details.orderNumber + ' changed to ' + details.orderStateData['new-fulfillment-order-state'] + ' + ' + details.orderStateData['new-financial-order-state']);
-
-        if (details.orderStateData['new-fulfillment-order-state'] === 'DELIVERED') {
-          markPurchaseAsComplete(details.orderNumber);
-        }
-
-      } else if (details.riskNotification) {
-        app.logger.info('RISK notification received for ' + details.orderNumber);
-      }
-    }
-  );
-});
-
-
 
 app.get('/fb/checkauth/:id/:key', function (req, res) {
   
   getAppById(req.params.id, function(err, app) {
     if(err || !app) {
-      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false, loggedIn: false});
     }
     req.session.app = app;
@@ -696,7 +674,9 @@ app.get('/fb/checkauth/:id/:key', function (req, res) {
     
     //console.log('USER AT CHECK AUTH: %s', JSON.stringify(req.user, null, 2));
     //console.log('SESSION AT CHECK AUTH: %s', JSON.stringify(req.session, null, 2));
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated()
+      || typeof(req.session.passport.user)==='undefined' 
+      || typeof(req.session.passport.user.facebook)==='undefined' ) {
       return req.session.save(function() {
         return res.send({loggedIn: false});
       });
@@ -731,7 +711,7 @@ app.get('/fb/friends', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -742,7 +722,7 @@ app.get('/fb/friends', function (req, res) {
       access_token:   req.session.passport.user.facebook.accessToken
     }, function (result) {
       if(!result || result.error) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- friends failed');
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- friends failed');
         return res.send({success: false, error: result.error || 'error'});
       }
       return res.send({success: true, friends:result});
@@ -757,7 +737,7 @@ app.get('/fb/wallpost', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -779,16 +759,17 @@ app.get('/fb/wallpost', function (req, res) {
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
     FB.api('me/feed', 'post', msg, function (result) {
       if(!result || result.error) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- wallpost failed');
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- wallpost failed');
         return res.send({success: false, error: result.error || 'error'});
       }
       User.updateAppStats(req.session.passport.user.email, 
+        'facebook', 
         req.session.passport.user.facebook.email, 
         req.session.appId,
         'has_shared', true, 
         function(err, updatedUser) {
           if(err || !updatedUser) {
-            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
             return res.send({success: false});
           }
           return res.send({success: true, has_shared: true});
@@ -846,7 +827,7 @@ app.get('/fb/shareresults/:num', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -902,7 +883,7 @@ app.get('/fb/shareresults/:num', function (req, res) {
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
     FB.api('me/feed', 'post', msg, function (result) {
       if(!result || result.error) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- shareresults failed');
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- shareresults failed');
         return res.send({success: false, error: result.error || 'error'});
       }
       return res.send({success: true});
@@ -917,19 +898,20 @@ app.get('/fb/wallpost/save', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
     
     if( req.query.post_id ) {
       User.updateAppStats(req.session.passport.user.email, 
+        'facebook', 
         req.session.passport.user.facebook.email, 
         req.session.appId,
         'has_shared', true, 
         function(err, updatedUser) {
           if(err || !updatedUser) {
-            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
           }
         }
       );
@@ -946,7 +928,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -957,7 +939,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
     }, function(err, u) {
       
       if(err || !u) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
       
@@ -1012,7 +994,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
     
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -1021,7 +1003,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
     try{
       num = parseInt(req.params.num);
     }catch(err){
-      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false});
     }
   
@@ -1031,7 +1013,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
     }, function(err, u) {
       
       if(err || !u) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
       
@@ -1043,12 +1025,13 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       }
       
       User.updateAppStats(req.session.passport.user.email, 
+        'facebook', 
         req.session.passport.user.facebook.email, 
         req.session.appId,
         'total', total,
         function(err, updatedUser) {
           if(err || !updatedUser) {
-            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
             return res.send({success: false});
           }
 
