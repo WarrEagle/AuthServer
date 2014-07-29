@@ -428,7 +428,7 @@ function getProfileId(user) {
 }
 
 function respondError(reason, req, res, err) {
-  app.logger.error('IP: ' + req.ip + ', Reason: ' + reason + ', Error Object: ' + JSON.stringify(err, null, 2));
+  app.logger.error('Reason: ' + reason + '\n[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
   res.render('error', view({ layout: false }));
 }
 
