@@ -428,7 +428,7 @@ function getProfileId(user) {
 }
 
 function respondError(reason, req, res, err) {
-  console.error('IP: %s, Reason: %s, Error Object: %s', req.ip, reason, JSON.stringify(err, null, 2));
+  app.logger.error('IP: ' + req.ip + ', Reason: ' + reason + ', Error Object: ' + JSON.stringify(err, null, 2));
   res.render('error', view({ layout: false }));
 }
 
@@ -531,6 +531,16 @@ app.get('/payment/gateways', function(req, res) {
 });
 
 app.get('/purchase/check/:key', function (req, res) {
+  if( !req.isAuthenticated() 
+      || typeof(req.session.passport.user)==='undefined' 
+      || typeof(req.session.passport.user.facebook)==='undefined'
+      || typeof(req.session.appId)==='undefined' ) {
+      
+    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] not loggedIn');
+    return res.send({success: false, loggedIn: false});
+    
+  }
+  
   Purchase.findOne({
     purchaseKey: req.params.key,
     status: 'COMPLETE'
