@@ -219,8 +219,8 @@ var updateFacebookAccessToken = updateAccessToken.bind(this, 'facebook');
 
 passport.use(new GoogleStrategy({
   clientID: settings.google.appId,
-   clientSecret: settings.google.appSecret,
-   callbackURL: settings.google.callbackURI
+  clientSecret: settings.google.appSecret,
+  callbackURL: settings.google.callbackURI
 }, function(accessToken, refreshToken, profile, done) {
   process.nextTick(function() {
     var newUserEmail = "";
@@ -277,16 +277,16 @@ passport.use(new FacebookStrategy({
 
 
 app.get('/auth/google/callback', 
-   passport.authenticate('google', { failureRedirect: '/auth/providers' }),
-   function(req, res) {
-      // Successful authentication, redirect home.
-      res.redirect('/postauth');
+  passport.authenticate('google', { failureRedirect: '/auth/providers' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/postauth');
 });
 
 app.get('/auth/google',
-   passport.authenticate('google', { scope: 
-      ['https://www.googleapis.com/auth/userinfo.profile',
-       'https://www.googleapis.com/auth/userinfo.email'] }
+  passport.authenticate('google', { scope: 
+    ['https://www.googleapis.com/auth/userinfo.profile',
+     'https://www.googleapis.com/auth/userinfo.email'] }
 ));
 
 app.get('/auth/facebook', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
@@ -365,7 +365,7 @@ app.get('/initCheckout/:paymentGateway', function(req, res) {
     }
     gateway(user, app, purchaseKey, function(err, resp) {
       if (err) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false, error: err});
       }
       res.redirect(resp.redirect);
@@ -539,7 +539,7 @@ app.get('/purchase/check/:key', function (req, res) {
   .exec(function (err, purchase) {
     
     if (err) {
-      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false});
     }
 
@@ -549,7 +549,7 @@ app.get('/purchase/check/:key', function (req, res) {
     }, function(err, u) {
       
       if(err || !u) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
       
@@ -665,7 +665,7 @@ app.get('/fb/checkauth/:id/:key', function (req, res) {
   
   getAppById(req.params.id, function(err, app) {
     if(err || !app) {
-      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false, loggedIn: false});
     }
     req.session.app = app;
@@ -711,7 +711,7 @@ app.get('/fb/friends', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -722,10 +722,10 @@ app.get('/fb/friends', function (req, res) {
       access_token:   req.session.passport.user.facebook.accessToken
     }, function (result) {
       if(!result || result.error) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- friends failed');
+        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] friends failed');
         return res.send({success: false, error: result.error || 'error'});
       }
-      return res.send({success: true, friends:result});
+      return res.send({success: true, friends: result});
     });
   }
 });
@@ -737,7 +737,7 @@ app.get('/fb/wallpost', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -759,7 +759,7 @@ app.get('/fb/wallpost', function (req, res) {
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
     FB.api('me/feed', 'post', msg, function (result) {
       if(!result || result.error) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- wallpost failed');
+        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] wallpost failed');
         return res.send({success: false, error: result.error || 'error'});
       }
       User.updateAppStats(req.session.passport.user.email, 
@@ -769,7 +769,7 @@ app.get('/fb/wallpost', function (req, res) {
         'has_shared', true, 
         function(err, updatedUser) {
           if(err || !updatedUser) {
-            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+            app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
             return res.send({success: false});
           }
           return res.send({success: true, has_shared: true});
@@ -827,7 +827,7 @@ app.get('/fb/shareresults/:num', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -883,7 +883,7 @@ app.get('/fb/shareresults/:num', function (req, res) {
     FB.setAccessToken(req.session.passport.user.facebook.accessToken);
     FB.api('me/feed', 'post', msg, function (result) {
       if(!result || result.error) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- shareresults failed');
+        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] shareresults failed');
         return res.send({success: false, error: result.error || 'error'});
       }
       return res.send({success: true});
@@ -898,7 +898,7 @@ app.get('/fb/wallpost/save', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -911,7 +911,7 @@ app.get('/fb/wallpost/save', function (req, res) {
         'has_shared', true, 
         function(err, updatedUser) {
           if(err || !updatedUser) {
-            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+            app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
           }
         }
       );
@@ -928,7 +928,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
       
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -939,7 +939,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
     }, function(err, u) {
       
       if(err || !u) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
       
@@ -994,7 +994,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
       || typeof(req.session.passport.user.facebook)==='undefined'
       || typeof(req.session.appId)==='undefined' ) {
     
-    app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- not loggedIn');
+    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] not loggedIn');
     return res.send({success: false, loggedIn: false});
     
   } else {
@@ -1003,7 +1003,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
     try{
       num = parseInt(req.params.num);
     }catch(err){
-      app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false});
     }
   
@@ -1013,7 +1013,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
     }, function(err, u) {
       
       if(err || !u) {
-        app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false});
       }
       
@@ -1031,7 +1031,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
         'total', total,
         function(err, updatedUser) {
           if(err || !updatedUser) {
-            app.logger.error('[Req]--- ' + JSON.stringify(req, ['ips', 'originalUrl', 'session'], 2) + '\n[Err]--- ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+            app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
             return res.send({success: false});
           }
 
