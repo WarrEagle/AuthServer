@@ -947,6 +947,8 @@ app.get('/fb/wallpost/save', function (req, res) {
         function(err, updatedUser) {
           if(err || !updatedUser) {
             app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+          } else {
+            app.logger.info('NEW SHARE: ' + updatedUser.email);
           }
         }
       );
