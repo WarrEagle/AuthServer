@@ -36,7 +36,8 @@
     "connect": "*",
     "moment-timezone": "*",
     "connect-redis": "1.4.7",
-    "fb": "*"
+    "fb": "*",
+    "2checkout-node": "*"
   },
   "devDependencies": {},
   "optionalDependencies": {}

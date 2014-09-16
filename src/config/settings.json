@@ -6,7 +6,7 @@
       "logging": {
         "loggers": {
           "console": {}
-        },          
+        },
         "level": "debug",
         "enabled": ["console"],
         "accessLogs": true,
@@ -15,7 +15,7 @@
       "showDebugInfo": true,
       "stats": "5398cada8c29d0f1ddb714b1",
       "emailNotify": false,
-      "email": "michaelquale+kauth@gmail.com" 
+      "email": "michaelquale+kauth@gmail.com"
     },
     "google": {
       "host": "checkout.google.com",
@@ -48,9 +48,25 @@
 		"returnPath": "paypalSuccess",
 		"cancelPath": "payment/gateways"
     },
+    "tco": {
+      "sandbox": false,
+      "privateKey": "67253CD7-26CA-45EF-9217-0809F6E7799E",
+      "sellerId": "202331222",
+      "demo": true,
+      "secretWord": "tango",
+      "returnPath": "notify/2co",
+      "host": "sv1.vnprodev.com",
+      "port": "80",
+      "demo": true,
+      "demo_order": "Y",
+      "mode": "2CO"
+    },
     "paymentOptions": [{
 			"name": "paypal"
 			, "buttonURL": "https://www.paypal.com/en_US/i/btn/btn_xpressCheckout.gif"
+		},{
+      "name": "2checkout",
+      "buttonURL": "/images/2cocc06.gif"
 		}]
   },
   "production": {
@@ -60,7 +76,7 @@
       "logging": {
         "loggers": {
           "console": {}
-        },          
+        },
         "level": "info",
         "enabled": ["console"],
         "accessLogs": false,
@@ -69,7 +85,7 @@
       "showDebugInfo": false,
       "stats": "5398cada8c29d0f1ddb714b1",
       "emailNotify": true,
-      "email": "michaelquale+kauth@gmail.com" 
+      "email": "michaelquale+kauth@gmail.com"
     },
     "google": {
       "host": "checkout.google.com",
@@ -102,9 +118,25 @@
 		"returnPath": "paypalSuccess",
 		"cancelPath": "payment/gateways"
     },
+    "tco": {
+      "sandbox": false,
+      "privateKey": "67253CD7-26CA-45EF-9217-0809F6E7799E",
+      "sellerId": "202331222",
+      "demo": true,
+      "secretWord": "tango",
+      "returnPath": "notify/2co",
+      "host": "sv1.vnprodev.com",
+      "port": "80",
+      "mode": "2CO",
+      "demo": true,
+      "demo_order": "Y"
+    },
     "paymentOptions": [{
 			"name": "paypal"
 			, "buttonURL": "https://www.paypal.com/en_US/i/btn/btn_xpressCheckout.gif"
+		},{
+      "name": "2checkout",
+      "buttonURL": "/images/2cocc06.gif"
 		}]
   }
 }

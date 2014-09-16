@@ -25,13 +25,18 @@ var GoogleStrategy      = require('passport-google-oauth').OAuth2Strategy;
 var FacebookStrategy    = require('passport-facebook').Strategy;
 var passport            = require('passport');
 var paypal              = require('./lib/paypal');
+var tco                 = require('./lib/2checkout');
 var FB                  = require('fb');
 
 paypal.init(settings.paypal);
+tco.init(settings.tco);
 
 var paymentGateways = {
   'paypal': function(user, app, purchaseKey, cb) {
     initCheckoutWithPaypal(user, app, purchaseKey, cb); 
+  },
+  '2checkout': function(user, app, purchaseKey, cb){
+    initCheckoutWith2Checkout(user, app, purchaseKey, cb);
   }
 };
 
@@ -289,8 +294,8 @@ app.get('/auth/google',
      'https://www.googleapis.com/auth/userinfo.email'] }
 ));
 
-app.get('/auth/facebook', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
 
+app.get('/auth/facebook', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
 app.get('/auth/facebook/callback', 
   passport.authenticate('facebook', { failureRedirect: '/auth/providers' }),
   function(req, res) {
@@ -419,6 +424,40 @@ function initCheckoutWithPaypal(user, app, purchaseKey, cb) {
     cb(null, {redirect: redirectURL});
   });
 }
+
+function initCheckoutWith2Checkout(user, app, purchaseKey, cb){
+  var orderId = createId();
+  insertNewPurchase(user, app._id.toString(), purchaseKey, orderId, orderId);
+  tco.create(orderId, app, function(err, link){
+    cb(null,{redirect: link});
+  });
+}
+
+app.post("/notify/2co", function(req, res){
+  var orderId = req.param("merchant_order_id");
+  if (tco.validate(req)){
+    Purchase.findOne({
+      orderId: orderId
+    }, function(err, purchase){
+      if (err){
+        return respondError('Error while looking for purchase', req, res, err);
+      }
+      tco.execute(req.body, purchase.orderNumber,  function(err, payer, transaction){
+        if(err){
+          return respondError('Error while executing paypal purchase', req, res, err);
+        }
+        req.session.transaction = transaction;
+        req.session.payerName = payer.info.firstName;
+        markPurchaseAsComplete(purchase.orderNumber);
+        res.redirect('/checkout/paymentConfirmed');
+      });
+      markPurchaseAsComplete(purchase.orderNumber);
+      res.redirect('/checkout/paymentConfirmed');
+    });
+  } else {
+    console.log(req.param("credit_card_processed"));
+  }
+});
 
 function getProfileId(user) {
   if(!_.isEmpty(user.google)) {
