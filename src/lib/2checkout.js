@@ -17,7 +17,7 @@ exports.create = function(orderId, app, callback){
     "li_0_price": app.price.toString(),
     "li_0_tangible": "N",
     "currency_code": conf.currency,
-    "x_receipt_link_url": 'http://' + conf.host + ':' + (conf.port ? conf.port : 3000) + '/' + conf.returnPath
+    "x_receipt_link_url": "http://" + conf.host + ((conf.port && conf.port!="80") ? (":"+conf.port+"/") : "/") + conf.returnPath
   };
   if( conf.demo ) TwoCheckoutParams.demo = "Y"; // only pass this param when needed
   var link = tco.checkout.link(TwoCheckoutParams);
