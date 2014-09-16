@@ -28,30 +28,36 @@ var paypal              = require('./lib/paypal');
 var tco                 = require('./lib/2checkout');
 var FB                  = require('fb');
 
+
 paypal.init(settings.paypal);
 tco.init(settings.tco);
 
 var paymentGateways = {
-  'paypal': function(user, app, purchaseKey, cb) {
-    initCheckoutWithPaypal(user, app, purchaseKey, cb); 
+  'paypal': function(billinfo, user, app, purchaseKey, cb) {
+    initCheckoutWithPaypal(billinfo, user, app, purchaseKey, cb); 
   },
-  '2checkout': function(user, app, purchaseKey, cb){
-    initCheckoutWith2Checkout(user, app, purchaseKey, cb);
+  '2checkout': function(billinfo, user, app, purchaseKey, cb){
+    initCheckoutWith2Checkout(billinfo, user, app, purchaseKey, cb);
   }
 };
 
-var transport = nodemailer.createTransport(
-  'SMTP', 
-  {
-    host: 'kickasschromeapps.com',
-    secureConnection: false,
-    port: 25,
-    auth: {
-      user: 'no-reply@kickasschromeapps.com',
-      pass: 'getin2it'
+
+var transport;
+if (settings.app.emailNotify) {
+  transport = nodemailer.createTransport(
+    'SMTP', 
+    {
+      host: 'kickasschromeapps.com',
+      secureConnection: false,
+      port: 25,
+      auth: {
+        user: 'no-reply@kickasschromeapps.com',
+        pass: 'getin2it'
+      }
     }
-  }
-);
+  );
+}
+
 
 hbs.registerHelper('isNotGoogleCheckout', function(name, options) {
   if (name !== 'google') {
@@ -67,7 +73,7 @@ process.on('uncaughtException', function (err) {
 
   if (settings.app.emailNotify) {
     transport.sendMail({
-      from: 'no-reply@kickasschromeapps.com',
+      from: settings.app.email,
       to: settings.app.email,
       subject: 'KickassAuth Friend Remover Uncaught Exception',
       text: 'Error: ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2)
@@ -146,9 +152,11 @@ function view(obj) {
   return obj;
 }
 
+
 app.get('/', function (req, res) {
   res.send('Nothing to see here.');
 }); 
+
 
 app.get('/postauth', function (req, res) {
   if(typeof(req.session.passport.user) !== 'undefined'){
@@ -183,6 +191,7 @@ function getUser(email, provider, profileId, cb) {
   User.findOne(q).exec(cb);
 }
 
+
 function createUser(provider, email, profile, accessToken, cb) {
 
   var profileId = profile.id;
@@ -192,6 +201,9 @@ function createUser(provider, email, profile, accessToken, cb) {
     email : email,
     login : provider + ":" + profileId
   };
+
+  // additional profile info
+  if( profile.gender ) user.gender = profile.gender;
 
   user[provider] = {
     email : profileId,
@@ -210,17 +222,20 @@ function createUser(provider, email, profile, accessToken, cb) {
 
 }
 
+
 function updateAccessToken(provider, user, token, profile, cb) {
 
   User.updateToken(user.email, provider, token, profile, cb);
 
 }
 
+
 var createUserWithGoogleInfo = createUser.bind(this, 'google');
 var createUserWithFacebookInfo = createUser.bind(this, 'facebook');
 
 var updateGoogleAccessToken = updateAccessToken.bind(this, 'google');
 var updateFacebookAccessToken = updateAccessToken.bind(this, 'facebook');
+
 
 passport.use(new GoogleStrategy({
   clientID: settings.google.appId,
@@ -250,6 +265,7 @@ passport.use(new GoogleStrategy({
     });
   });
 }));
+
 
 passport.use(new FacebookStrategy({
   clientID : settings.facebook.appId,
@@ -288,6 +304,7 @@ app.get('/auth/google/callback',
     res.redirect('/postauth');
 });
 
+
 app.get('/auth/google',
   passport.authenticate('google', { scope: 
     ['https://www.googleapis.com/auth/userinfo.profile',
@@ -315,6 +332,7 @@ app.get('/auth/facebook/callback',
     }
 });
 
+
 app.get('/auth/providers', function(req, res) {
   //console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
   req.session.from = 'buy';
@@ -335,23 +353,27 @@ app.get('/auth/providers', function(req, res) {
   });
 });
 
+
 app.get('/logout', function(req, res){
   req.logout();
   res.redirect('/');
 });
 
+
 app.get('/debug', function(req, res){
   if (!settings.app.showDebugInfo) {
     res.send({status: "ok"});
   } else {
-    res.send({isAuthenticated: req.isAuthenticated(), user: req.user, session: req.session});
+    res.send({isAuthenticated: req.isAuthenticated(), user: req.user, session: req.session, headers: req.headers});
   }
 });
+
 
 app.get('/checkout/paymentConfirmed', function(req, res) {
   var tmpldata = {payerName: req.session.payerName, transaction: req.session.transaction};
   res.render('paymentConfirmed', tmpldata);
 });
+
 
 app.get('/initCheckout/:paymentGateway', function(req, res) {
   
@@ -368,7 +390,14 @@ app.get('/initCheckout/:paymentGateway', function(req, res) {
     if(err || !app) {
       return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
     }
-    gateway(user, app, purchaseKey, function(err, resp) {
+
+    var billinfo = {};
+    if( user.name ) billinfo.name = user.name;
+    if( user.email ) billinfo.email = user.email;
+    if( req.headers['x-geoip-city'] ) billinfo.city = req.headers['x-geoip-city'];
+    if( req.headers['x-geoip-country-code3'] ) billinfo.country_code = req.headers['x-geoip-country-code3'];
+    
+    gateway(billinfo, user, app, purchaseKey, function(err, resp) {
       if (err) {
         app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
         return res.send({success: false, error: err});
@@ -378,11 +407,13 @@ app.get('/initCheckout/:paymentGateway', function(req, res) {
   });
 });
 
+
 function getAppById(appId, cb) {
   App.findById(appId, function(err, app) {
     cb(err, app);
   });
 }
+
 
 function getPurchase(profileId, appId, cb) {
   
@@ -403,11 +434,13 @@ function getPurchase(profileId, appId, cb) {
   
 }
 
+
 function purchaseToRevalidate(purchase, purchaseKey, cb) {
   purchase.purchaseKey = purchaseKey;
   purchase.mode = 'Revalidate';
   purchase.save(cb);
 }
+
 
 function getProfileId(user) {
   if(!_.isEmpty(user.google)) {
@@ -416,19 +449,22 @@ function getProfileId(user) {
   return user.facebook.email;
 }
 
+
 function respondError(reason, req, res, err) {
   app.logger.error('Reason: ' + reason + '\n[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
   res.render('error', view({ layout: false }));
 }
 
-function initCheckoutWith2Checkout(user, app, purchaseKey, cb){
+
+function initCheckoutWith2Checkout(billinfo, user, app, purchaseKey, cb){
   var orderId = createId();
   var paymentId = "TCO-" + orderId.toUpperCase();
   insertNewPurchase(user, app._id.toString(), purchaseKey, paymentId, orderId);
-  tco.create(orderId, app, function(err, link){
+  tco.create(billinfo, orderId, app, function(err, link){
     cb(null,{redirect: link});
   });
 }
+
 
 function completeCheckoutWith2CO(req, res){
   var data = null;
@@ -463,7 +499,8 @@ function completeCheckoutWith2CO(req, res){
 app.get ('/' + settings.tco.returnPath, completeCheckoutWith2CO);
 app.post('/' + settings.tco.returnPath, completeCheckoutWith2CO);
 
-function initCheckoutWithPaypal(user, app, purchaseKey, cb) {
+
+function initCheckoutWithPaypal(billinfo, user, app, purchaseKey, cb) {
   
   var orderId = createId()
   , price = app.price
@@ -478,6 +515,7 @@ function initCheckoutWithPaypal(user, app, purchaseKey, cb) {
     cb(null, {redirect: redirectURL});
   });
 }
+
 
 app.get('/' + settings.paypal.returnPath, function(req, res) {
   
@@ -509,6 +547,7 @@ app.get('/' + settings.paypal.returnPath, function(req, res) {
   });
   
 });
+
 
 app.get('/buy/:id', function (req, res) {
   
@@ -568,6 +607,7 @@ app.get('/buy/:id', function (req, res) {
     });
 });
 
+
 app.get('/payment/gateways', function(req, res) {
   getAppById(req.session.appId, function(err, app) {
     if(err || !app) {
@@ -576,6 +616,7 @@ app.get('/payment/gateways', function(req, res) {
     res.render('paymentOptions', {paymentOptions: settings.paymentOptions, isGoogleUser: true, app: app});
   });
 });
+
 
 app.get('/purchase/debug/:key', function (req, res) {
   if (!settings.app.showDebugInfo) {
@@ -600,6 +641,7 @@ app.get('/purchase/debug/:key', function (req, res) {
     });
   }
 });
+
 
 app.get('/purchase/check/:key', function (req, res) {
   if( !req.isAuthenticated() 
@@ -658,6 +700,7 @@ app.get('/purchase/check/:key', function (req, res) {
   });
 });
 
+
 function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
   app.logger.info('NEW ORDER: ' + token); 
   var p = {
@@ -692,7 +735,7 @@ function markPurchaseAsComplete(token) {
     app.logger.info('NEW ORDER COMPLETE: ' + token + ' - APP: ' + appName);
     if (settings.app.emailNotify) {
       transport.sendMail({
-        from: 'no-reply@kickasschromeapps.com',
+        from: settings.app.email,
         to: settings.app.email,
         subject: 'KickassAuth ' + appName + ' Order: ' + token,
         text: '\n created: ' + purchase.created
@@ -742,7 +785,6 @@ function markPurchaseAsComplete(token) {
 }
 
 
-
 app.get('/fb/checkauth/:id/:key', function (req, res) {
   
   getAppById(req.params.id, function(err, app) {
@@ -779,6 +821,7 @@ app.get('/fb/login', function(req, res) {
   });
 });
 
+
 app.get('/fb/auth2', passport.authenticate('facebook', { display: 'popup', scope: ['publish_actions'] } ));
 app.get('/fb/login2', function(req, res) {
   req.session.from = 'chrome';
@@ -786,6 +829,7 @@ app.get('/fb/login2', function(req, res) {
     return res.redirect('/fb/auth2');
   });
 });
+
 
 app.get('/fb/friends', function (req, res) {
   if( !req.isAuthenticated() 
@@ -1197,7 +1241,7 @@ var port = process.argv[2] || 3000;
 
 if (settings.app.emailNotify) {
   transport.sendMail({
-    from: 'no-reply@kickasschromeapps.com',
+    from: settings.app.email,
     to: settings.app.email,
     subject: 'KickassAuth Friend Remover Starting up daemon. Port ' + port,
     text: 'Just a friendly notice.'

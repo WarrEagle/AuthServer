@@ -9,7 +9,6 @@ exports.init = function(config) {
 
 exports.create = function(email, orderId, app, cb) {
 	
-	
 	var paypalPayment = {
 		'intent' : conf.intent,
 		'payer' : {

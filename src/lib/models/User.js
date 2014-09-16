@@ -5,14 +5,26 @@ var ObjectId = Schema.ObjectId;
 
 var User;
 var userSchema = new Schema();
-  
+
 userSchema.add({
   email: String,
   name: String,
+  gender: String,
+  address: String,
+  city: String,
+  state: String,
+  zip: String,
+  country: String,
+  country_code: String,
+  phone: String,
   google: {
     email: String,
     accessToken: String,
     expires: Date
+  },
+  facebook: {
+    email: String,
+    accessToken: String
   },
   appId: {
     has_shared: Boolean,
