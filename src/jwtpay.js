@@ -431,9 +431,13 @@ function initCheckoutWith2Checkout(user, app, purchaseKey, cb){
 }
 
 function completeCheckoutWith2CO(req, res){
-  var data = req.query || req.body; // GET:req.query ; POST:req.body
-  var orderId = data.merchant_order_id;
-  if (tco.validate(data)){
+  var data = null;
+  if (req.query && req.query.merchant_order_id)
+    data = req.query; // GET:req.query
+  else if (req.body && req.body.merchant_order_id)
+    data = req.body; // POST:req.body
+  if (data && tco.validate(data)){
+    var orderId = data.merchant_order_id;
     Purchase.findOne({
       orderId: orderId
     }).populate('app').exec(function(err, purchase) {
