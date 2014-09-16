@@ -7,11 +7,10 @@ exports.init = function(config){
   return tco;
 };
 
-exports.create = function(paymentId, app, callback){
+exports.create = function(orderId, app, callback){
   var TwoCheckoutParams = {
     "mode": conf.mode,
-    "demo": conf.demo_order,
-    "merchant_order_id": paymentId,
+    "merchant_order_id": orderId,
     "li_0_type": "product",
     "li_0_name": app.name + " - " + app.description,
     "li_0_quantity": 1,
@@ -20,29 +19,30 @@ exports.create = function(paymentId, app, callback){
     "currency_code": conf.currency,
     "x_receipt_link_url": 'http://' + conf.host + ':' + (conf.port ? conf.port : 3000) + '/' + conf.returnPath
   };
+  if( conf.demo ) TwoCheckoutParams.demo = "Y"; // only pass this param when needed
   var link = tco.checkout.link(TwoCheckoutParams);
   callback(null, link);
 };
 
 exports.validate = function(data){
-  console.log(tco.response.valid(data, data.total), JSON.stringify(data, null, 2));
+  //console.log(tco.response.valid(data, data.total), JSON.stringify(data, null, 2));
   return data.credit_card_processed == "Y" && tco.response.valid(data, data.total);
 };
 
 exports.execute = function(data, orderNumber, callback){
   var now = (new Date()).toISOString().replace(/\.[\d]{3}Z$/, 'Z ');
-  var t = {
+  var trans = {
     id: orderNumber,
     type: "sale",
-    paymentType: data.mode,
+    paymentType: data.pay_method,
     orderTime: now,
     amount: data.total,
-    currencyCode: data.currency_code,
+    currencyCode: conf.currency,
     taxAmount: "",
     paymentStatus: ((data.credit_card_processed == "Y") ? "Approved" : "Pending")
   };
   var payer = {
-    method: data.mode,
+    method: data.pay_method,
     info: {
       email: data.email,
       firstName: data.first_name,
@@ -50,6 +50,6 @@ exports.execute = function(data, orderNumber, callback){
       id: data.email
     }
   }
-  callback(null, payer, t);
+  callback(null, payer, trans);
 };
 

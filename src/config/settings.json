@@ -50,15 +50,13 @@
     },
     "tco": {
       "sandbox": false,
-      "privateKey": "67253CD7-26CA-45EF-9217-0809F6E7799E",
-      "sellerId": "202331222",
-      "demo": true,
-      "secretWord": "tango",
-      "returnPath": "notify/2co",
-      "host": "sv1.vnprodev.com",
+      "sellerId": "202194488",
+      "secretWord": "AnT77SGyhJaSecwG",
+      "host": "auth2.friend-manager.com",
       "port": "80",
+      "returnPath": "notify/2co",
       "demo": true,
-      "demo_order": "Y",
+      "currency": "USD",
       "mode": "2CO"
     },
     "paymentOptions": [{
@@ -120,16 +118,14 @@
     },
     "tco": {
       "sandbox": false,
-      "privateKey": "67253CD7-26CA-45EF-9217-0809F6E7799E",
-      "sellerId": "202331222",
-      "demo": true,
-      "secretWord": "tango",
-      "returnPath": "notify/2co",
-      "host": "sv1.vnprodev.com",
+      "sellerId": "202194488",
+      "secretWord": "AnT77SGyhJaSecwG",
+      "host": "auth2.friend-manager.com",
       "port": "80",
-      "mode": "2CO",
-      "demo": true,
-      "demo_order": "Y"
+      "returnPath": "notify/2co",
+      "demo": false,
+      "currency": "USD",
+      "mode": "2CO"
     },
     "paymentOptions": [{
 			"name": "paypal"

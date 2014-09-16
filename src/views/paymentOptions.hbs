@@ -20,10 +20,10 @@
 	  {{#each paymentOptions}}
 	  	{{#if isGoogleUser }}
 	  		{{#isNotGoogleCheckout name}} 
-	  			<a class='paymentOption'><img class='checkoutButton' src="{{buttonURL}}" onclick="initializeCheckout('{{name}}')"></a>
+	  			<a class='paymentOption'><img class='checkoutButton' src="{{buttonURL}}" onclick="initializeCheckout('{{name}}')"></a>&nbsp;&nbsp;&nbsp;
 	  		{{/isNotGoogleCheckout}}
 	  		{{else}}
-	  			<a class='paymentOption'><img class='checkoutButton' src="{{buttonURL}}" onclick="initializeCheckout('{{name}}')"></a>
+	  			<a class='paymentOption'><img class='checkoutButton' src="{{buttonURL}}" onclick="initializeCheckout('{{name}}')"></a>&nbsp;&nbsp;&nbsp;
 	  	{{/if}}
 	  {{/each}}
     </div><br>

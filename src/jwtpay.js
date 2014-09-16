@@ -409,6 +409,56 @@ function purchaseToRevalidate(purchase, purchaseKey, cb) {
   purchase.save(cb);
 }
 
+function getProfileId(user) {
+  if(!_.isEmpty(user.google)) {
+    return user.google.email;
+  }
+  return user.facebook.email;
+}
+
+function respondError(reason, req, res, err) {
+  app.logger.error('Reason: ' + reason + '\n[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+  res.render('error', view({ layout: false }));
+}
+
+function initCheckoutWith2Checkout(user, app, purchaseKey, cb){
+  var orderId = createId();
+  var paymentId = "TCO-" + orderId.toUpperCase();
+  insertNewPurchase(user, app._id.toString(), purchaseKey, paymentId, orderId);
+  tco.create(orderId, app, function(err, link){
+    cb(null,{redirect: link});
+  });
+}
+
+function completeCheckoutWith2CO(req, res){
+  var data = req.query || req.body; // GET:req.query ; POST:req.body
+  var orderId = data.merchant_order_id;
+  if (tco.validate(data)){
+    Purchase.findOne({
+      orderId: orderId
+    }).populate('app').exec(function(err, purchase) {
+      if (err){
+        return respondError('Error while looking for purchase', req, res, err);
+      }
+      tco.execute(data, purchase.orderNumber, function(err, payer, transaction){
+        if(err){
+          return respondError('Error while executing 2checkout purchase', req, res, err);
+        }
+        req.session.transaction = transaction;
+        req.session.payerName = payer.info.firstName;
+        req.session.save(function() {
+          markPurchaseAsComplete(purchase.orderNumber);
+          res.redirect('/checkout/paymentConfirmed');        
+        });
+      });
+    });
+  } else {
+    return respondError('Invalid 2checkout payment.', req, res, err);
+  }
+}
+app.get ('/' + settings.tco.returnPath, completeCheckoutWith2CO);
+app.post('/' + settings.tco.returnPath, completeCheckoutWith2CO);
+
 function initCheckoutWithPaypal(user, app, purchaseKey, cb) {
   
   var orderId = createId()
@@ -423,52 +473,6 @@ function initCheckoutWithPaypal(user, app, purchaseKey, cb) {
     insertNewPurchase(user, app._id.toString(), purchaseKey, order.paymentId, orderId);
     cb(null, {redirect: redirectURL});
   });
-}
-
-function initCheckoutWith2Checkout(user, app, purchaseKey, cb){
-  var orderId = createId();
-  insertNewPurchase(user, app._id.toString(), purchaseKey, orderId, orderId);
-  tco.create(orderId, app, function(err, link){
-    cb(null,{redirect: link});
-  });
-}
-
-app.post("/notify/2co", function(req, res){
-  var orderId = req.param("merchant_order_id");
-  if (tco.validate(req)){
-    Purchase.findOne({
-      orderId: orderId
-    }, function(err, purchase){
-      if (err){
-        return respondError('Error while looking for purchase', req, res, err);
-      }
-      tco.execute(req.body, purchase.orderNumber,  function(err, payer, transaction){
-        if(err){
-          return respondError('Error while executing paypal purchase', req, res, err);
-        }
-        req.session.transaction = transaction;
-        req.session.payerName = payer.info.firstName;
-        markPurchaseAsComplete(purchase.orderNumber);
-        res.redirect('/checkout/paymentConfirmed');
-      });
-      markPurchaseAsComplete(purchase.orderNumber);
-      res.redirect('/checkout/paymentConfirmed');
-    });
-  } else {
-    console.log(req.param("credit_card_processed"));
-  }
-});
-
-function getProfileId(user) {
-  if(!_.isEmpty(user.google)) {
-    return user.google.email;
-  }
-  return user.facebook.email;
-}
-
-function respondError(reason, req, res, err) {
-  app.logger.error('Reason: ' + reason + '\n[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-  res.render('error', view({ layout: false }));
 }
 
 app.get('/' + settings.paypal.returnPath, function(req, res) {
