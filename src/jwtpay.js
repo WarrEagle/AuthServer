@@ -59,6 +59,28 @@ if (settings.app.emailNotify) {
 }
 
 
+function SendMailWithRetry(subject, content, retriesLeft) {
+  transport.sendMail({
+    from: 'no-reply@kickasschromeapps.com',
+    to: settings.app.email,
+    subject: subject,
+    text: content
+  }, function(error, response){
+    if(error){
+      app.logger.error('Could not send email for: ' + subject + '\n[Err] ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
+      if( retriesLeft > 0 ) {
+        setImmediate(function(){
+          app.logger.info('Retry sending email for: ' + subject);
+          SendMailWithRetry(subject, content, retriesLeft-1);
+        });
+      }
+    }else{
+      app.logger.info('Email sent for: ' + subject);
+    }
+  });
+}
+
+
 hbs.registerHelper('isNotGoogleCheckout', function(name, options) {
   if (name !== 'google') {
     return options.fn(this);
@@ -72,18 +94,9 @@ process.on('uncaughtException', function (err) {
   app.logger.fatal('UNCAUGHT EXCEPTION', [err]);
 
   if (settings.app.emailNotify) {
-    transport.sendMail({
-      from: settings.app.email,
-      to: settings.app.email,
-      subject: 'KickassAuth Friend Remover Uncaught Exception',
-      text: 'Error: ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2)
-    }, function(error, response){
-      if(error){
-        app.logger.error('Could not send email for Uncaught Exception: ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
-      }else{
-        app.logger.info('Email sent for Uncaught Exception');
-      }
-    });
+    var subject = 'KickassAuth Friend Remover Uncaught Exception';
+    var text = 'Error: ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2);
+    SendMailWithRetry(subject, text, 3);
   }
 });
 
@@ -734,24 +747,14 @@ function markPurchaseAsComplete(token) {
     var appName = purchase.app.name + ' (' + purchase.app.language + ')';
     app.logger.info('NEW ORDER COMPLETE: ' + token + ' - APP: ' + appName);
     if (settings.app.emailNotify) {
-      transport.sendMail({
-        from: settings.app.email,
-        to: settings.app.email,
-        subject: 'KickassAuth ' + appName + ' Order: ' + token,
-        text: '\n created: ' + purchase.created
+      var subject = 'KickassAuth ' + appName + ' Order: ' + token;
+      var text = '\n created: ' + purchase.created
             + '\n orderId:  ' + purchase.orderId
             + '\n orderNumber: ' + purchase.orderNumber
             + '\n app: ' + appName
             + '\n purchaseKey: ' + purchase.purchaseKey
-            + '\n googleId: ' + purchase.googleId
-          //  + '\n user: ' + purchase.user._id.toString()
-      }, function(error, response){
-        if(error){
-          app.logger.error('Could not send email for Purchase COMPLETE: ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
-        }else{
-          app.logger.info('Email sent for Purchase COMPLETE');
-        }
-      });
+            + '\n googleId: ' + purchase.googleId;
+      SendMailWithRetry(subject, text, 3);
     }
 
     purchase.status = 'COMPLETE';
@@ -1240,18 +1243,9 @@ app.get('/fb/logdeletes/:num', function (req, res) {
 var port = process.argv[2] || 3000;
 
 if (settings.app.emailNotify) {
-  transport.sendMail({
-    from: settings.app.email,
-    to: settings.app.email,
-    subject: 'KickassAuth Friend Remover Starting up daemon. Port ' + port,
-    text: 'Just a friendly notice.'
-  }, function(error, response){
-    if(error){
-      app.logger.error('Could not send email for Starting up daemon: ' + JSON.stringify(error, ['stack', 'message', 'inner'], 2));
-    }else{
-      app.logger.info('Email sent for Starting up daemon');
-    }
-  });
+  var subject = 'KickassAuth Friend Remover Starting up daemon. Port ' + port;
+  var text = 'Just a friendly notice.';
+  SendMailWithRetry(subject, text, 3);
 }
 
 app.listen(port);
