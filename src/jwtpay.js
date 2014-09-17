@@ -1101,7 +1101,7 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
           msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
         }
         
-        if( msg.redirect_uri ){
+        if( msg.redirect_uri && !(/^http.?:\/\//.test(msg.redirect_uri)) ){
           msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
         }
         if( !msg.app_id ){
@@ -1220,7 +1220,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
             gamifyMsg = gamifyMsg.replace(/GAME_LEVEL/g, game.level);
             gamifyMsg = gamifyMsg.replace(/GAME_IMAGE/g, game.img);
           }
-          if( msg.redirect_uri ){
+          if( msg.redirect_uri && !(/^http.?:\/\//.test(msg.redirect_uri)) ){
             msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
           }
           if( !msg.app_id ){
