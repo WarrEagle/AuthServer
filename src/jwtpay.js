@@ -107,7 +107,7 @@ loggerService.addLogger(settings.app.logging.enabled[0]);
 var accessLogger = loggerService.getLoggers()[0];
 
 app.configure(function () {
-  app.set('trust proxy', 'loopback') // get client ip on nginx proxy
+  app.set('trust proxy', 'loopback'); // get client ip on nginx proxy
   app.set('views', __dirname + '/views');
   app.set("view options", { layout: false });
   app.set('view engine', 'hbs');
@@ -255,7 +255,7 @@ function ensureSessionPage(req, res, next) {
 function ensureSessionApi(req, res, next) {
   return ensureSession(req, res, next, function(req, res) {
     res.send({success: false, error: 'No app found!'});
-  }
+  });
 }
 
 
@@ -590,7 +590,7 @@ function initCheckoutWithPaypal(billinfo, user, appObj, purchaseKey, cb) {
   var orderId = createId()
   , price = appObj.price
   , email = user.email
-  , description = appObj.purchaseMsg
+  , description = appObj.purchaseMsg;
 
   paypal.create(email, orderId, appObj, function(err, order, redirectURL) {
     if(err) {
@@ -647,7 +647,7 @@ app.get('/buy/:id', ensureSessionPage, ensureAuthenticatedPage, function (req, r
       }
       getPurchase(getProfileId(user), appObj._id, function(err, purchase) {
         if(err) {
-          return cb({message: 'ERROR_IN_FETCHING_PURCHASE'})
+          return cb({message: 'ERROR_IN_FETCHING_PURCHASE'});
         }
         cb(err, appObj, purchase);
       });
@@ -961,7 +961,7 @@ function gamify(total){
     level = 'The Plague';
     img = settings.app.hostname + '/gamify/lv1000.png';
   } else {
-    level = 'Grim Reaper'
+    level = 'Grim Reaper';
     img = settings.app.hostname + '/gamify/lv9999.png';
   }
   return { level: level, img: img };
