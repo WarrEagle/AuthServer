@@ -235,12 +235,12 @@ function ensureSession(req, res, next, errorHandler) {
       req.session.app = result;
       req.session.save(function(){
         next();
-      }
+      });
     });
   } else {
     req.session.save(function(){
       next();
-    }
+    });
   }
 }
 
