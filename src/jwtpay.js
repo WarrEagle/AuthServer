@@ -107,6 +107,7 @@ loggerService.addLogger(settings.app.logging.enabled[0]);
 var accessLogger = loggerService.getLoggers()[0];
 
 app.configure(function () {
+  app.disable('x-powered-by');
   app.set('trust proxy', 'loopback'); // get client ip on nginx proxy
   app.set('views', __dirname + '/views');
   app.set("view options", { layout: false });
