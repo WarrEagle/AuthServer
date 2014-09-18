@@ -228,21 +228,21 @@ function ensureSession(req, res, next, errorHandler) {
   // from
   if( !req.session.from ) req.session.from = 'buy';
   // get app from appId
-  if( !req.session.app ) {
-    App.findById(req.session.appId, function(err, result) {
-      if (err || !result) {
-        return errorHandler(req, res);
-      }
-      req.session.app = result;
-      req.session.save(function(){
-        next();
+  req.session.save(function() {
+    if( !req.session.app ) {
+      App.findById(req.session.appId, function(err, result) {
+        if (err || !result) {
+          return errorHandler(req, res);
+        }
+        req.session.app = result;
+        req.session.save(function() {
+          next();
+        });
       });
-    });
-  } else {
-    req.session.save(function(){
-      next();
-    });
-  }
+    } else {
+        next();
+    }
+  });
 }
 
 
@@ -414,7 +414,9 @@ app.get('/auth/providers', function(req, res) {
   //console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
   if( req.session.from === 'chrome' ){
     req.session.from = 'buy';
-    res.render('fbLoginCallback');
+    req.session.save(function() {
+      res.render('fbLoginCallback');
+    });
   } else {
     res.render('oauthProviders', {
       providers: [{
@@ -439,7 +441,9 @@ app.get('/postauth', ensureAuthenticatedPage, ensureSessionPage, function (req, 
   app.logger.info('Saved email: ' + req.session.passport.user.email);
   if( req.session.from === 'chrome' ){
     req.session.from = 'buy';
-    res.render('fbLoginCallback');
+    req.session.save(function() {
+      res.render('fbLoginCallback');
+    });
   } else {
     res.redirect('/buy/' + req.session.appId + '?purchaseKey=' + req.session.purchaseKey);
   }
