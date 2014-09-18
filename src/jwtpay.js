@@ -9,6 +9,7 @@ var RedisStore          = require('connect-redis')(express);
 var rest                = require('restler');
 var _                   = require('underscore');
 var depRegistrar        = require('./registrars/dependencyRegistrar');
+var google              = require('./lib/google');
 var settings            = require('./lib/settings');
 var loggerService       = require('./services/logger').create(settings.app.logging);
 var async               = require('async');
@@ -31,13 +32,12 @@ var FB                  = require('fb');
 
 paypal.init(settings.paypal);
 tco.init(settings.tco);
-
 var paymentGateways = {
-  'paypal': function(billinfo, user, app, purchaseKey, cb) {
-    initCheckoutWithPaypal(billinfo, user, app, purchaseKey, cb); 
+  'paypal': function(billinfo, user, appObj, purchaseKey, cb) {
+    initCheckoutWithPaypal(billinfo, user, appObj, purchaseKey, cb); 
   },
-  '2checkout': function(billinfo, user, app, purchaseKey, cb){
-    initCheckoutWith2Checkout(billinfo, user, app, purchaseKey, cb);
+  '2checkout': function(billinfo, user, appObj, purchaseKey, cb){
+    initCheckoutWith2Checkout(billinfo, user, appObj, purchaseKey, cb);
   }
 };
 
@@ -63,7 +63,7 @@ function SendMailWithRetry(subject, content, retriesLeft) {
   transport.sendMail({
     from: 'no-reply@kickasschromeapps.com',
     to: settings.app.email,
-    subject: subject,
+    subject: '[' + settings.app.emailSubject + '] ' + subject,
     text: content
   }, function(error, response){
     if(error){
@@ -94,14 +94,14 @@ process.on('uncaughtException', function (err) {
   app.logger.fatal('UNCAUGHT EXCEPTION', [err]);
 
   if (settings.app.emailNotify) {
-    var subject = 'KickassAuth Friend Remover Uncaught Exception';
+    var subject = 'Uncaught Exception';
     var text = 'Error: ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2);
     SendMailWithRetry(subject, text, 3);
   }
 });
 
-depRegistrar.register(app, settings);
 
+depRegistrar.register(app, settings);
 loggerService.clearLoggers();
 loggerService.addLogger(settings.app.logging.enabled[0]);
 var accessLogger = loggerService.getLoggers()[0];
@@ -145,13 +145,16 @@ app.configure(function () {
   }
 });
 
+
 app.configure('development', function () {
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
+
 app.configure('production', function () {
   app.use(express.errorHandler());
 });
+
 
 function view(obj) {
   _.defaults(
@@ -167,29 +170,105 @@ function view(obj) {
 }
 
 
+function ensureAuthenticated(req, res, next, authProvider, errorHandler) {
+  if( req.isAuthenticated() ) {
+    if( !authProvider || req.session.passport.user[authProvider] ) {
+      return next();
+    } else {
+      return errorHandler(req, res);
+    }
+  } else {
+    return errorHandler(req, res);
+  }
+}
+
+
+function ensureAuthenticatedPage(req, res, next) {
+  return ensureAuthenticated(req, res, next, null, function(req, res) {
+    res.redirect('/auth/providers');
+  });
+}
+
+
+function ensureAuthenticatedApi(req, res, next) {
+  return ensureAuthenticated(req, res, next, null, function(req, res) {
+    res.send({success: false, loggedIn: false});
+  });
+}
+
+
+function ensureAuthenticatedFacebookPage(req, res, next) {
+  return ensureAuthenticated(req, res, next, 'facebook', function(req, res) {
+    res.redirect('/fb/login');
+  });
+}
+
+
+function ensureAuthenticatedFacebookApi(req, res, next) {
+  return ensureAuthenticated(req, res, next, 'facebook', function(req, res) {
+    res.send({success: false, loggedIn: false});
+  });
+}
+
+
+function ensureSession(req, res, next, errorHandler) {
+  // check appId
+  if( !req.session.appId ) {
+    if( req.params && req.params.id ) req.session.appId = req.params.id;
+    if( req.query && req.query.appId ) req.session.appId = req.query.appId;
+    if( !req.session.appId ) return errorHandler(req, res);
+  }
+  // check purchaseKey
+  if( !req.session.purchaseKey ) {
+    if( req.params && req.params.key ) req.session.purchaseKey = req.params.key;
+    if( req.query && req.query.purchaseKey ) req.session.purchaseKey = req.query.purchaseKey;
+    if( !req.session.purchaseKey ) return errorHandler(req, res);
+  }
+  // from
+  if( !req.session.from ) req.session.from = 'buy';
+  // get app from appId
+  if( !req.session.app ) {
+    App.findById(req.session.appId, function(err, result) {
+      if (err || !result) {
+        return errorHandler(req, res);
+      }
+      req.session.app = result;
+      req.session.save(function(){
+        next();
+      }
+    });
+  } else {
+    req.session.save(function(){
+      next();
+    }
+  }
+}
+
+
+function ensureSessionPage(req, res, next) {
+  return ensureSession(req, res, next, function(req, res) {
+    respondError(req.session.appId ? 'Missing session values' : 'No app found!', req, res, null);
+  });
+}
+
+
+function ensureSessionApi(req, res, next) {
+  return ensureSession(req, res, next, function(req, res) {
+    res.send({success: false, error: 'No app found!'});
+  }
+}
+
+
 app.get('/', function (req, res) {
   res.send('Nothing to see here.');
 }); 
 
 
-app.get('/postauth', function (req, res) {
-  if(typeof(req.session.passport.user) !== 'undefined'){
-  
-    //console.log('req.session.passport.user: %s', JSON.stringify(req.session.passport.user, null, 2));
-    //console.log('req.user: %s', JSON.stringify(req.user, null, 2));
-    //console.log('SESSION INSPECTION AT POST AUTH: %s', JSON.stringify(req.session, null, 2));
-    app.logger.info('Saved email: ' + req.session.passport.user.email);
-    res.redirect('/buy/' + req.session.appId + '?purchaseKey=' + req.session.purchaseKey);
-
-  }else{
-    res.redirect('/auth/providers');
-  }
-});
-
 // Necessary passport helper function to serialize users
 passport.serializeUser(function(user, done) {
    done(null, user);
 });
+
 
 // Necessary passport helper function to deserialize users
 passport.deserializeUser(function(obj, done) {
@@ -235,18 +314,13 @@ function createUser(provider, email, profile, accessToken, cb) {
   });
 
 }
-
-
-function updateAccessToken(provider, user, token, profile, cb) {
-
-  User.updateToken(user.email, provider, token, profile, cb);
-
-}
-
-
 var createUserWithGoogleInfo = createUser.bind(this, 'google');
 var createUserWithFacebookInfo = createUser.bind(this, 'facebook');
 
+
+function updateAccessToken(provider, user, token, profile, cb) {
+  User.updateToken(user.email, provider, token, profile, cb);
+}
 var updateGoogleAccessToken = updateAccessToken.bind(this, 'google');
 var updateFacebookAccessToken = updateAccessToken.bind(this, 'facebook');
 
@@ -328,43 +402,46 @@ app.get('/auth/google',
 
 app.get('/auth/facebook', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
 app.get('/auth/facebook/callback', 
-  passport.authenticate('facebook', { failureRedirect: '/auth/providers' }),
+   passport.authenticate('facebook', { failureRedirect: '/auth/providers' }),
   function(req, res) {
-  
-    if(req.session.from === 'chrome'){
-      if(typeof(req.session.passport.user) !== 'undefined'){
-        return req.session.save(function() {
-          res.render('fbLoginCallback');
-        });
-      }else{
-        res.redirect('/fb/auth');
-      }
-      
-    }else{
-      // Successful authentication, redirect home.
-      res.redirect('/postauth');
-    }
+    // Successful authentication, redirect home.
+    res.redirect('/postauth');
 });
 
 
 app.get('/auth/providers', function(req, res) {
   //console.log('SESSION INSPECTION PRE AUTH: %s', JSON.stringify(req.session, null, 2));
-  req.session.from = 'buy';
-  return req.session.save(function() {
+  if( req.session.from === 'chrome' ){
+    req.session.from = 'buy';
+    res.render('fbLoginCallback');
+  } else {
     res.render('oauthProviders', {
       providers: [{
-      //---temporary disable Google Auth, causing conflict on FB app
-      //  name: 'google'
-      //  , title: 'Google+'
-      //  , path: '/auth/google'
-      //}
-      //, {
+        name: 'google'
+        , title: 'Google+'
+        , path: '/auth/google'
+      }
+      , {
         name: 'facebook'
         , title: 'Facebook'
         , path: '/auth/facebook'
       }]
     });
-  });
+  }
+});
+
+
+app.get('/postauth', ensureAuthenticatedPage, ensureSessionPage, function (req, res) {
+  //console.log('req.session.passport.user: %s', JSON.stringify(req.session.passport.user, null, 2));
+  //console.log('req.user: %s', JSON.stringify(req.user, null, 2));
+  //console.log('SESSION INSPECTION AT POST AUTH: %s', JSON.stringify(req.session, null, 2));
+  app.logger.info('Saved email: ' + req.session.passport.user.email);
+  if( req.session.from === 'chrome' ){
+    req.session.from = 'buy';
+    res.render('fbLoginCallback');
+  } else {
+    res.redirect('/buy/' + req.session.appId + '?purchaseKey=' + req.session.purchaseKey);
+  }
 });
 
 
@@ -389,42 +466,36 @@ app.get('/checkout/paymentConfirmed', function(req, res) {
 });
 
 
-app.get('/initCheckout/:paymentGateway', function(req, res) {
+app.get('/initCheckout/:paymentGateway', ensureAuthenticatedPage, ensureSessionPage, function(req, res) {
   
   var gateway = paymentGateways[req.params.paymentGateway]
   , purchaseKey = req.session.purchaseKey
-  , appId = req.session.appId
+  , appObj = req.session.app
   , user = req.session.passport.user
   ;
 
   if(!gateway) {
     return res.send(404);
   }
-  getAppById(appId, function(err, app) {
-    if(err || !app) {
-      return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
-    }
 
-    var billinfo = {};
-    if( user.name ) billinfo.name = user.name;
-    if( user.email ) billinfo.email = user.email;
-    if( req.headers['x-geoip-city'] ) billinfo.city = req.headers['x-geoip-city'];
-    if( req.headers['x-geoip-country-code3'] ) billinfo.country_code = req.headers['x-geoip-country-code3'];
-    
-    gateway(billinfo, user, app, purchaseKey, function(err, resp) {
-      if (err) {
-        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-        return res.send({success: false, error: err});
-      }
-      res.redirect(resp.redirect);
-    });    
+  var billinfo = {};
+  if( user.name ) billinfo.name = user.name;
+  if( user.email ) billinfo.email = user.email;
+  if( req.headers['x-geoip-city'] ) billinfo.city = req.headers['x-geoip-city'];
+  if( req.headers['x-geoip-country-code3'] ) billinfo.country_code = req.headers['x-geoip-country-code3'];
+  
+  gateway(billinfo, user, appObj, purchaseKey, function(err, resp) {
+    if (err) {
+      return respondError('Error while init ' + gateway + ' checkout.', req, res, err);
+    }
+    res.redirect(resp.redirect);
   });
 });
 
 
 function getAppById(appId, cb) {
-  App.findById(appId, function(err, app) {
-    cb(err, app);
+  App.findById(appId, function(err, appObj) {
+    cb(err, appObj);
   });
 }
 
@@ -470,11 +541,11 @@ function respondError(reason, req, res, err) {
 }
 
 
-function initCheckoutWith2Checkout(billinfo, user, app, purchaseKey, cb){
+function initCheckoutWith2Checkout(billinfo, user, appObj, purchaseKey, cb){
   var orderId = createId();
   var paymentId = "TCO-" + orderId.toUpperCase();
-  insertNewPurchase(user, app._id.toString(), purchaseKey, paymentId, orderId);
-  tco.create(billinfo, orderId, app, function(err, link){
+  insertNewPurchase(user, appObj._id.toString(), purchaseKey, paymentId, orderId);
+  tco.create(billinfo, orderId, appObj, function(err, link){
     cb(null,{redirect: link});
   });
 }
@@ -491,7 +562,7 @@ function completeCheckoutWith2CO(req, res){
     Purchase.findOne({
       orderId: orderId
     }).populate('app').exec(function(err, purchase) {
-      if (err){
+      if(err || !purchase){
         return respondError('Error while looking for purchase', req, res, err);
       }
       tco.execute(data, purchase.orderNumber, function(err, payer, transaction){
@@ -514,18 +585,18 @@ app.get ('/' + settings.tco.returnPath, completeCheckoutWith2CO);
 app.post('/' + settings.tco.returnPath, completeCheckoutWith2CO);
 
 
-function initCheckoutWithPaypal(billinfo, user, app, purchaseKey, cb) {
+function initCheckoutWithPaypal(billinfo, user, appObj, purchaseKey, cb) {
   
   var orderId = createId()
-  , price = app.price
+  , price = appObj.price
   , email = user.email
-  , description = app.purchaseMsg
+  , description = appObj.purchaseMsg
 
-  paypal.create(email, orderId, app, function(err, order, redirectURL) {
+  paypal.create(email, orderId, appObj, function(err, order, redirectURL) {
     if(err) {
       return cb(err);
     }
-    insertNewPurchase(user, app._id.toString(), purchaseKey, order.paymentId, orderId);
+    insertNewPurchase(user, appObj._id.toString(), purchaseKey, order.paymentId, orderId);
     cb(null, {redirect: redirectURL});
   });
 }
@@ -541,13 +612,12 @@ app.get('/' + settings.paypal.returnPath, function(req, res) {
     orderId: orderId
   }).populate('app').exec(function(err, purchase) {
     
-    if(err) {
+    if(err || !purchase){
       return respondError('Error while looking for purchase', req, res, err);
     }
     
-    paypal.execute(purchase.orderNumber, payerId, function(err, state, dateTime, payer, transaction) {
-      
-      if(err) {
+    paypal.execute(purchase.orderNumber, payerId, function(err, state, dateTime, payer, transaction){
+      if(err){
         return respondError('Error while executing paypal purchase', req, res, err);
       }
       req.session.transaction = transaction;
@@ -563,44 +633,31 @@ app.get('/' + settings.paypal.returnPath, function(req, res) {
 });
 
 
-app.get('/buy/:id', function (req, res) {
+app.get('/buy/:id', ensureSessionPage, ensureAuthenticatedPage, function (req, res) {
+  // This is the API for invite app, save session before validate authentication
   
-  var purchaseKey = req.query.purchaseKey
+  var purchaseKey = req.session.purchaseKey
   , user = req.session.passport.user
   ;
   
-  if (!req.isAuthenticated()) {
-    getAppById(req.params.id, function(err, app) {
-      if(err || !app) {
-        return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
-      }
-      req.session.app = app;
-      req.session.appId = req.params.id;
-      req.session.purchaseKey = purchaseKey;
-      return req.session.save(function() {
-        return res.redirect('/auth/providers');      
-      });
-    });
-  }
-  
   async.waterfall([getAppById.bind(this, req.session.appId)
-    , function(app, cb) {
-      if(!app) {
+    , function(appObj, cb) {
+      if(!appObj) {
         return cb({message: 'APP_NOT_FOUND'});
       }
-      getPurchase(getProfileId(user), app._id, function(err, purchase) {
+      getPurchase(getProfileId(user), appObj._id, function(err, purchase) {
         if(err) {
           return cb({message: 'ERROR_IN_FETCHING_PURCHASE'})
         }
-        cb(err, app, purchase);
+        cb(err, appObj, purchase);
       });
     }
-    , function(app, purchase, cb) {
+    , function(appObj, purchase, cb) {
       if(!purchase) {
         return cb({message: 'PURCHASE_NOT_FOUND'});
       }
       if(purchase.status === 'COMPLETE') {
-        return cb({message: 'PURCHASE_ALREADY_COMPLETE', purchase: purchase, app: app});
+        return cb({message: 'PURCHASE_ALREADY_COMPLETE', purchase: purchase, appObj: appObj});
       }
       return cb({message: 'PURCHASE_NOT_YET_COMPLETE'});
     }]
@@ -612,7 +669,7 @@ app.get('/buy/:id', function (req, res) {
         return purchaseToRevalidate(err.purchase, purchaseKey, function() {
           req.logout(); // reset login session for security
           app.logger.info('Revalidated User: PurchaseKey: ' + purchaseKey);
-          return res.render( 'revalidate', view({ layout: false, app: err.app }));
+          return res.render( 'revalidate', view({ layout: false, app: err.appObj }));
         });
       }
       if(err.message === 'PURCHASE_NOT_FOUND' || err.message === 'PURCHASE_NOT_YET_COMPLETE') {
@@ -622,33 +679,21 @@ app.get('/buy/:id', function (req, res) {
 });
 
 
-app.get('/payment/gateways', function(req, res) {
-  getAppById(req.session.appId, function(err, app) {
-    if(err || !app) {
-      return respondError(err ? 'Error while fetching app from db' : 'No app found!', req, res, err);
-    }
-    res.render('paymentOptions', {paymentOptions: settings.paymentOptions, isGoogleUser: true, app: app});
-  });
+app.get('/payment/gateways', ensureSessionPage, function(req, res) {
+  res.render('paymentOptions', {paymentOptions: settings.paymentOptions, isGoogleUser: true, app: req.session.app});
 });
 
 
-app.get('/purchase/debug/:key', function (req, res) {
+app.get('/purchase/debug/:key', ensureAuthenticatedApi, function (req, res) {
   if (!settings.app.showDebugInfo) {
     res.send({status: "ok"});
   } else {
-    if( !req.isAuthenticated() 
-        || typeof(req.session.passport.user)==='undefined' 
-        || typeof(req.session.passport.user.facebook)==='undefined'
-        || typeof(req.session.appId)==='undefined' ) {
-      return res.send({success: false, loggedIn: false});
-    }
-    
     Purchase.findOne({
       purchaseKey: req.params.key
     })
     .populate('app')
     .exec(function (err, purchase) {
-      if (err) {
+      if(err || !purchase){
         return res.send({success: false, error: err});
       }
       return res.send({success: true, purchase: purchase});
@@ -658,59 +703,60 @@ app.get('/purchase/debug/:key', function (req, res) {
 
 
 app.get('/purchase/check/:key', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-      
-    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] not loggedIn');
-    return res.send({success: false, loggedIn: false});
-    
-  }
+  // This is the API for invite app, it does not require session & authenticate
   
   Purchase.findOne({
     purchaseKey: req.params.key,
-    status: 'COMPLETE'
+    status     : 'COMPLETE'
   })
   .populate('app')
   .exec(function (err, purchase) {
     
-    if (err) {
+    if(err){
       app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false});
     }
 
-    User.findOne({
-      email: req.session.passport.user.email,
-      login: req.session.passport.user.login
-    }, function(err, u) {
-      
-      if(err || !u) {
-        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-        return res.send({success: false});
-      }
-      
-      var user = u.toJSON();
-      var stats = user[settings.app.stats];
-      if( typeof(stats)==='undefined' ){
-        stats = false;
-      }
-    
-      if (!purchase || purchase.status !== 'COMPLETE') {
-        return res.send({
-          success: true,
-          purchased: false,
-          stats: stats
-        });
-      }
+    if(!purchase) {
+      return res.send({
+        success: true,
+        purchased: false,
+        stats: false
+      });
+    }
 
-      res.send({
+    if( !req.isAuthenticated() ){
+      return res.send({
         success: true,
         purchased: true,
-        stats: stats,
+        stats: false,
         includes: purchase.app.includes
       });
-    });
+    } else {
+      User.findOne({
+        email: req.session.passport.user.email,
+        login: req.session.passport.user.login
+      }, function(err, u) {
+        
+        if(err || !u) {
+          app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+          return res.send({success: false});
+        }
+        
+        var user = u.toJSON();
+        var stats = user[settings.app.stats];
+        if( typeof(stats)==='undefined' ){
+          stats = false;
+        }
+      
+        res.send({
+          success: true,
+          purchased: true,
+          stats: stats,
+          includes: purchase.app.includes
+        });
+      });
+    }
   });
 });
 
@@ -718,13 +764,13 @@ app.get('/purchase/check/:key', function (req, res) {
 function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
   app.logger.info('NEW ORDER: ' + token); 
   var p = {
-    orderNumber:  token,
-    app:          appId,
-    purchaseKey:  purchaseKey,
-    user:        user._id,
-    googleId:     getProfileId(user),
-    status:       'PENDING',
-    orderId: orderId || createId()
+    orderNumber: token,
+    app        : appId,
+    purchaseKey: purchaseKey,
+    user       : user._id,
+    googleId   : getProfileId(user),
+    status     : 'PENDING',
+    orderId    : orderId || createId()
   };
   var purchase = new Purchase(p);
   purchase.save();
@@ -732,15 +778,17 @@ function insertNewPurchase(user, appId, purchaseKey, token, orderId) {
 
 
 function markPurchaseAsComplete(token) {
+
   Purchase.findOne({
     orderNumber : token
   }).populate('app').exec(function(err, purchase) {
-    if (err) {
+    
+    if(err){
       app.logger.error('Could not fetch purchase: ' + token);
       return;
     }
 
-    if (!purchase) {
+    if(!purchase){
       app.logger.error('PURCHASE NOT FOUND: ' + token);
       return;
     }
@@ -748,7 +796,7 @@ function markPurchaseAsComplete(token) {
     var appName = purchase.app.name + ' (' + purchase.app.language + ')';
     app.logger.info('NEW ORDER COMPLETE: ' + token + ' - APP: ' + appName);
     if (settings.app.emailNotify) {
-      var subject = 'KickassAuth ' + appName + ' Order: ' + token;
+      var subject = appName + ' Order: ' + token;
       var text = '\n created: ' + purchase.created
             + '\n orderId:  ' + purchase.orderId
             + '\n orderNumber: ' + purchase.orderNumber
@@ -764,8 +812,9 @@ function markPurchaseAsComplete(token) {
       // Find all pending orders and remove them
       Purchase.find({
         purchaseKey:  purchase.purchaseKey,
-        status:       'PENDING'
+        status     : 'PENDING'
       }).populate('app').exec(function(err, list) {
+      
         if (err) {
           app.logger.error('Could not fetch pending purchase for PurchaseKey: ' + purchase.purchaseKey);
           return;
@@ -776,10 +825,9 @@ function markPurchaseAsComplete(token) {
           return;
         
         // Remove pending orders
-        var i = 0, len = list.length;
-        for (i = 0; i < len;) {
+        var len = list.length;
+        for(var i = 0; i < len; i++) {
           list[i].remove();
-          i = i + 1;
         }
         
         app.logger.info('Removed ' + len + ' PENDING Orders for PurchaseKey: ' + purchase.purchaseKey);
@@ -789,31 +837,20 @@ function markPurchaseAsComplete(token) {
 }
 
 
-app.get('/fb/checkauth/:id/:key', function (req, res) {
+app.get('/fb/checkauth/:id/:key', ensureSessionApi, function (req, res) {
+  // This is the API for FFR app, save session before validate authentication
   
-  getAppById(req.params.id, function(err, app) {
-    if(err || !app) {
-      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-      return res.send({success: false, loggedIn: false});
-    }
-    req.session.app = app;
-    req.session.appId = req.params.id;
-    req.session.purchaseKey = req.params.key;
-    
-    //console.log('USER AT CHECK AUTH: %s', JSON.stringify(req.user, null, 2));
-    //console.log('SESSION AT CHECK AUTH: %s', JSON.stringify(req.session, null, 2));
-    if (!req.isAuthenticated()
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined' ) {
-      return req.session.save(function() {
-        return res.send({loggedIn: false});
-      });
-    } else {
-      return req.session.save(function() {
-        return res.send({loggedIn: true});
-      });
-    }
-  });
+  //console.log('USER AT CHECK AUTH: %s', JSON.stringify(req.user, null, 2));
+  //console.log('SESSION AT CHECK AUTH: %s', JSON.stringify(req.session, null, 2));
+  if( !req.isAuthenticated() ) {
+    return req.session.save(function() {
+      return res.send({loggedIn: false});
+    });
+  } else {
+    return req.session.save(function() {
+      return res.send({loggedIn: true});
+    });
+  }
 });
 
 
@@ -835,78 +872,58 @@ app.get('/fb/login2', function(req, res) {
 });
 
 
-app.get('/fb/friends', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-      
-    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] not loggedIn');
-    return res.send({success: false, loggedIn: false});
-    
-  } else {
+app.get('/fb/friends', ensureAuthenticatedFacebookApi, ensureSessionApi, function (req, res) {
   
-    FB.api('me/friends', {
-      fields:         'name,picture',
-      limit:          5000,
-      access_token:   req.session.passport.user.facebook.accessToken
-    }, function (result) {
-      if(!result || result.error) {
-        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] friends failed');
-        return res.send({success: false, error: result.error || 'error'});
-      }
-      return res.send({success: true, friends: result});
-    });
-  }
+  FB.api('me/friends', {
+    fields:         'name,picture',
+    limit:          5000,
+    access_token:   req.session.passport.user.facebook.accessToken
+  }, function (result) {
+    if(!result || result.error) {
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] friends failed');
+      return res.send({success: false, error: result.error || 'error'});
+    }
+    return res.send({success: true, friends: result});
+  });
 });
 
 
-app.get('/fb/wallpost', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-      
-    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] not loggedIn');
-    return res.send({success: false, loggedIn: false});
-    
-  } else {
-  
-    var msg = req.session.app.shareMsg;
-    if( msg.name && req.session.passport.user.name ){
-      msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-    }
-    if( msg.caption && req.session.passport.user.name ){
-      msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-    }
-    if( msg.description && req.session.passport.user.name ){
-      msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-    }
-    if( msg.message && req.session.passport.user.name ){
-      msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-    }
-    
-    FB.setAccessToken(req.session.passport.user.facebook.accessToken);
-    FB.api('me/feed', 'post', msg, function (result) {
-      if(!result || result.error) {
-        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] wallpost failed');
-        return res.send({success: false, error: result.error || 'error'});
-      }
-      User.updateAppStats(req.session.passport.user.email, 
-        'facebook', 
-        req.session.passport.user.facebook.email, 
-        settings.app.stats,
-        'has_shared', true, 
-        function(err, updatedUser) {
-          if(err || !updatedUser) {
-            app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-            return res.send({success: false});
-          }
-          return res.send({success: true, has_shared: true});
-        }
-      );
-    });
+app.get('/fb/wallpost', ensureAuthenticatedFacebookApi, ensureSessionApi, function (req, res) {
+
+  var msg = req.session.app.shareMsg;
+  if( msg.name && req.session.passport.user.name ){
+    msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
   }
+  if( msg.caption && req.session.passport.user.name ){
+    msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+  }
+  if( msg.description && req.session.passport.user.name ){
+    msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+  }
+  if( msg.message && req.session.passport.user.name ){
+    msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+  }
+  
+  FB.setAccessToken(req.session.passport.user.facebook.accessToken);
+  FB.api('me/feed', 'post', msg, function (result) {
+    if(!result || result.error) {
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] wallpost failed');
+      return res.send({success: false, error: result.error || 'error'});
+    }
+    User.updateAppStats(req.session.passport.user.email, 
+      'facebook', 
+      req.session.passport.user.facebook.email, 
+      settings.app.stats,
+      'has_shared', true, 
+      function(err, updatedUser) {
+        if(err || !updatedUser) {
+          app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+          return res.send({success: false});
+        }
+        return res.send({success: true, has_shared: true});
+      }
+    );
+  });
 });
 
 
@@ -951,157 +968,237 @@ function gamify(total){
 }
 
 
-app.get('/fb/shareresults/:num', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-      
-    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] not loggedIn');
-    return res.send({success: false, loggedIn: false});
-    
-  } else {
+app.get('/fb/shareresults/:num', ensureAuthenticatedFacebookApi, ensureSessionApi, function (req, res) {
+
+  var num = 0;
+  try{
+    num = parseInt(req.params.num);
+  }catch(ee){
+    return res.send({success: false});
+  }
+
+  // GAMIFY
+  var game = gamify(num);
+  var msg = req.session.app.shareResultsMsg;
+  if( msg.gamifyMsg ) delete msg.gamifyMsg;
+  if( msg.picture ){
+    msg.picture = msg.picture.replace(/GAME_LEVEL/g, game.level);
+    msg.picture = msg.picture.replace(/GAME_IMAGE/g, game.img);
+  }
+  if( msg.name ){
+    if( req.session.passport.user.name ){
+      msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+    }
+    msg.name = msg.name.replace(/NUMBER/g, num);
+    msg.name = msg.name.replace(/GAME_LEVEL/g, game.level);
+    msg.name = msg.name.replace(/GAME_IMAGE/g, game.img);
+  }
+  if( msg.caption ){
+    if( req.session.passport.user.name ){
+      msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+    }
+    msg.caption = msg.caption.replace(/NUMBER/g, num);
+    msg.caption = msg.caption.replace(/GAME_LEVEL/g, game.level);
+    msg.caption = msg.caption.replace(/GAME_IMAGE/g, game.img);
+  }
+  if( msg.description ){
+    if( req.session.passport.user.name ){
+      msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+    }
+    msg.description = msg.description.replace(/NUMBER/g, num);
+    msg.description = msg.description.replace(/GAME_LEVEL/g, game.level);
+    msg.description = msg.description.replace(/GAME_IMAGE/g, game.img);
+  }
+  if( msg.message ){
+    if( req.session.passport.user.name ){
+      msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+    }
+    msg.message = msg.message.replace(/NUMBER/g, num);
+    msg.message = msg.message.replace(/GAME_LEVEL/g, game.level);
+    msg.message = msg.message.replace(/GAME_IMAGE/g, game.img);
+  }
   
-    var num = 0;
-    try{
-      num = parseInt(req.params.num);
-    }catch(ee){
+  FB.setAccessToken(req.session.passport.user.facebook.accessToken);
+  FB.api('me/feed', 'post', msg, function (result) {
+    if(!result || result.error) {
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] shareresults failed');
+      return res.send({success: false, error: result.error || 'error'});
+    }
+    return res.send({success: true});
+  });
+});
+
+
+app.get('/fb/wallpost/save', ensureAuthenticatedFacebookApi, ensureSessionApi, function (req, res) {
+  
+  if( req.query.post_id ) {
+    User.updateAppStats(req.session.passport.user.email, 
+      'facebook', 
+      req.session.passport.user.facebook.email, 
+      settings.app.stats,
+      'has_shared', req.query.post_id, 
+      function(err, updatedUser) {
+        if(err || !updatedUser) {
+          app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+        } else {
+          app.logger.info('NEW SHARE: ' + updatedUser.email);
+        }
+      }
+    );
+  }
+  
+  return res.render('fbLoginCallback');
+});
+
+
+app.get('/fb/wallpost/check/:key', ensureAuthenticatedFacebookApi, ensureSessionApi, function (req, res) {
+
+  User.findOne({
+    email: req.session.passport.user.email,
+    login: req.session.passport.user.login
+  }, function(err, u) {
+    
+    if(err || !u) {
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
       return res.send({success: false});
     }
-  
-    // GAMIFY
-    var game = gamify(num);
-    var msg = req.session.app.shareResultsMsg;
-    if( msg.gamifyMsg ) delete msg.gamifyMsg;
-    if( msg.picture ){
-      msg.picture = msg.picture.replace(/GAME_LEVEL/g, game.level);
-      msg.picture = msg.picture.replace(/GAME_IMAGE/g, game.img);
+    
+    var user = u.toJSON();
+    var has_shared = false;
+    var stats = user[settings.app.stats];
+    if( typeof(stats)!=='undefined' && typeof(stats.has_shared)!=='undefined' ){
+      has_shared = (stats.has_shared!==false);
     }
-    if( msg.name ){
-      if( req.session.passport.user.name ){
+    
+    if( has_shared ){
+      
+      return res.send({success: true, has_shared: true});
+    
+    } else {
+    
+      var msg = req.session.app.shareMsg;
+      if( msg.name && req.session.passport.user.name ){
         msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.name = msg.name.replace(/NUMBER/g, num);
-      msg.name = msg.name.replace(/GAME_LEVEL/g, game.level);
-      msg.name = msg.name.replace(/GAME_IMAGE/g, game.img);
-    }
-    if( msg.caption ){
-      if( req.session.passport.user.name ){
+      if( msg.caption && req.session.passport.user.name ){
         msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.caption = msg.caption.replace(/NUMBER/g, num);
-      msg.caption = msg.caption.replace(/GAME_LEVEL/g, game.level);
-      msg.caption = msg.caption.replace(/GAME_IMAGE/g, game.img);
-    }
-    if( msg.description ){
-      if( req.session.passport.user.name ){
+      if( msg.description && req.session.passport.user.name ){
         msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.description = msg.description.replace(/NUMBER/g, num);
-      msg.description = msg.description.replace(/GAME_LEVEL/g, game.level);
-      msg.description = msg.description.replace(/GAME_IMAGE/g, game.img);
-    }
-    if( msg.message ){
-      if( req.session.passport.user.name ){
+      if( msg.message && req.session.passport.user.name ){
         msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
       }
-      msg.message = msg.message.replace(/NUMBER/g, num);
-      msg.message = msg.message.replace(/GAME_LEVEL/g, game.level);
-      msg.message = msg.message.replace(/GAME_IMAGE/g, game.img);
-    }
-    
-    FB.setAccessToken(req.session.passport.user.facebook.accessToken);
-    FB.api('me/feed', 'post', msg, function (result) {
-      if(!result || result.error) {
-        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] shareresults failed');
-        return res.send({success: false, error: result.error || 'error'});
+      
+      if( msg.redirect_uri && !(/^http.?:\/\//.test(msg.redirect_uri)) ){
+        msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
       }
-      return res.send({success: true});
-    });
-  }
+      if( !msg.app_id ){
+        msg.app_id = settings.facebook.appId;
+      }
+      if( !msg.display ){
+        msg.display = 'popup';
+      }
+      
+      return res.send({success: true, has_shared: false, sharemsg: msg});
+        
+    }
+  });
 });
 
 
-app.get('/fb/wallpost/save', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-      
-    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] not loggedIn');
-    return res.send({success: false, loggedIn: false});
+app.get('/fb/logdeletes/:num', ensureAuthenticatedFacebookApi, ensureSessionApi, function (req, res) {
+
+  var num = 0;
+  try{
+    num = parseInt(req.params.num);
+  }catch(err){
+    app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+    return res.send({success: false});
+  }
+
+  User.findOne({
+    email: req.session.passport.user.email,
+    login: req.session.passport.user.login
+  }, function(err, u) {
     
-  } else {
+    if(err || !u) {
+      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+      return res.send({success: false});
+    }
     
-    if( req.query.post_id ) {
-      User.updateAppStats(req.session.passport.user.email, 
-        'facebook', 
-        req.session.passport.user.facebook.email, 
-        settings.app.stats,
-        'has_shared', req.query.post_id, 
-        function(err, updatedUser) {
-          if(err || !updatedUser) {
-            app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-          } else {
-            app.logger.info('NEW SHARE: ' + updatedUser.email);
+    var user = u.toJSON();
+    var total = num;
+    var stats = user[settings.app.stats];
+    if( typeof(stats)!=='undefined' && typeof(stats.total)!=='undefined' ){
+      total += parseInt(stats.total);
+    }
+    
+    User.updateAppStats(req.session.passport.user.email, 
+      'facebook', 
+      req.session.passport.user.facebook.email, 
+      settings.app.stats,
+      'total', total,
+      function(err, updatedUser) {
+        if(err || !updatedUser) {
+          app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
+          return res.send({success: false});
+        }
+
+        // use total for the share message
+        num = total;
+        
+        // GAMIFY
+        var game = gamify(total);
+        var msg = req.session.app.shareResultsMsg;
+        if( msg.picture ){
+          msg.picture = msg.picture.replace(/GAME_LEVEL/g, game.level);
+          msg.picture = msg.picture.replace(/GAME_IMAGE/g, game.img);
+        }
+        if( msg.name ){
+          if( req.session.passport.user.name ){
+            msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
           }
+          msg.name = msg.name.replace(/NUMBER/g, num);
+          msg.name = msg.name.replace(/GAME_LEVEL/g, game.level);
+          msg.name = msg.name.replace(/GAME_IMAGE/g, game.img);
         }
-      );
-    }
-    
-    return res.render('fbLoginCallback');
-  }
-});
-
-
-app.get('/fb/wallpost/check/:key', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-      
-    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] not loggedIn');
-    return res.send({success: false, loggedIn: false});
-    
-  } else {
-  
-    User.findOne({
-      email: req.session.passport.user.email,
-      login: req.session.passport.user.login
-    }, function(err, u) {
-      
-      if(err || !u) {
-        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-        return res.send({success: false});
-      }
-      
-      var user = u.toJSON();
-      var has_shared = false;
-      var stats = user[settings.app.stats];
-      if( typeof(stats)!=='undefined' && typeof(stats.has_shared)!=='undefined' ){
-        has_shared = (stats.has_shared!==false);
-      }
-      
-      if( has_shared ){
-        
-        return res.send({success: true, has_shared: true});
-      
-      } else {
-      
-        var msg = req.session.app.shareMsg;
-        if( msg.name && req.session.passport.user.name ){
-          msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+        if( msg.caption ){
+          if( req.session.passport.user.name ){
+            msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+          }
+          msg.caption = msg.caption.replace(/NUMBER/g, num);
+          msg.caption = msg.caption.replace(/GAME_LEVEL/g, game.level);
+          msg.caption = msg.caption.replace(/GAME_IMAGE/g, game.img);
         }
-        if( msg.caption && req.session.passport.user.name ){
-          msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+        if( msg.description ){
+          if( req.session.passport.user.name ){
+            msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+          }
+          msg.description = msg.description.replace(/NUMBER/g, num);
+          msg.description = msg.description.replace(/GAME_LEVEL/g, game.level);
+          msg.description = msg.description.replace(/GAME_IMAGE/g, game.img);
         }
-        if( msg.description && req.session.passport.user.name ){
-          msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+        if( msg.message ){
+          if( req.session.passport.user.name ){
+            msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+          }
+          msg.message = msg.message.replace(/NUMBER/g, num);
+          msg.message = msg.message.replace(/GAME_LEVEL/g, game.level);
+          msg.message = msg.message.replace(/GAME_IMAGE/g, game.img);
         }
-        if( msg.message && req.session.passport.user.name ){
-          msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+        var gamifyMsg = '';
+        if( msg.gamifyMsg ){
+          gamifyMsg = msg.gamifyMsg;
+          delete msg.gamifyMsg;
+          
+          if( req.session.passport.user.name ){
+            gamifyMsg = gamifyMsg.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
+          }
+          gamifyMsg = gamifyMsg.replace(/NUMBER/g, num);
+          gamifyMsg = gamifyMsg.replace(/GAME_LEVEL/g, game.level);
+          gamifyMsg = gamifyMsg.replace(/GAME_IMAGE/g, game.img);
         }
-        
         if( msg.redirect_uri && !(/^http.?:\/\//.test(msg.redirect_uri)) ){
           msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
         }
@@ -1112,130 +1209,10 @@ app.get('/fb/wallpost/check/:key', function (req, res) {
           msg.display = 'popup';
         }
         
-        return res.send({success: true, has_shared: false, sharemsg: msg});
-          
+        return res.send({success: true, deletes: total, picture: game.img, message: gamifyMsg, sharemsg: msg});
       }
-    });
-  }
-});
-
-
-app.get('/fb/logdeletes/:num', function (req, res) {
-  if( !req.isAuthenticated() 
-      || typeof(req.session.passport.user)==='undefined' 
-      || typeof(req.session.passport.user.facebook)==='undefined'
-      || typeof(req.session.appId)==='undefined' ) {
-    
-    //app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] not loggedIn');
-    return res.send({success: false, loggedIn: false});
-    
-  } else {
-  
-    var num = 0;
-    try{
-      num = parseInt(req.params.num);
-    }catch(err){
-      app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-      return res.send({success: false});
-    }
-  
-    User.findOne({
-      email: req.session.passport.user.email,
-      login: req.session.passport.user.login
-    }, function(err, u) {
-      
-      if(err || !u) {
-        app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-        return res.send({success: false});
-      }
-      
-      var user = u.toJSON();
-      var total = num;
-      var stats = user[settings.app.stats];
-      if( typeof(stats)!=='undefined' && typeof(stats.total)!=='undefined' ){
-        total += parseInt(stats.total);
-      }
-      
-      User.updateAppStats(req.session.passport.user.email, 
-        'facebook', 
-        req.session.passport.user.facebook.email, 
-        settings.app.stats,
-        'total', total,
-        function(err, updatedUser) {
-          if(err || !updatedUser) {
-            app.logger.error('[Req] ' + JSON.stringify(req, ['ip', 'originalUrl', 'headers', 'session'], 2) + '\n[Err] ' + JSON.stringify(err, ['stack', 'message', 'inner'], 2));
-            return res.send({success: false});
-          }
-
-          // use total for the share message
-          num = total;
-          
-          // GAMIFY
-          var game = gamify(total);
-          var msg = req.session.app.shareResultsMsg;
-          if( msg.picture ){
-            msg.picture = msg.picture.replace(/GAME_LEVEL/g, game.level);
-            msg.picture = msg.picture.replace(/GAME_IMAGE/g, game.img);
-          }
-          if( msg.name ){
-            if( req.session.passport.user.name ){
-              msg.name = msg.name.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-            }
-            msg.name = msg.name.replace(/NUMBER/g, num);
-            msg.name = msg.name.replace(/GAME_LEVEL/g, game.level);
-            msg.name = msg.name.replace(/GAME_IMAGE/g, game.img);
-          }
-          if( msg.caption ){
-            if( req.session.passport.user.name ){
-              msg.caption = msg.caption.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-            }
-            msg.caption = msg.caption.replace(/NUMBER/g, num);
-            msg.caption = msg.caption.replace(/GAME_LEVEL/g, game.level);
-            msg.caption = msg.caption.replace(/GAME_IMAGE/g, game.img);
-          }
-          if( msg.description ){
-            if( req.session.passport.user.name ){
-              msg.description = msg.description.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-            }
-            msg.description = msg.description.replace(/NUMBER/g, num);
-            msg.description = msg.description.replace(/GAME_LEVEL/g, game.level);
-            msg.description = msg.description.replace(/GAME_IMAGE/g, game.img);
-          }
-          if( msg.message ){
-            if( req.session.passport.user.name ){
-              msg.message = msg.message.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-            }
-            msg.message = msg.message.replace(/NUMBER/g, num);
-            msg.message = msg.message.replace(/GAME_LEVEL/g, game.level);
-            msg.message = msg.message.replace(/GAME_IMAGE/g, game.img);
-          }
-          var gamifyMsg = '';
-          if( msg.gamifyMsg ){
-            gamifyMsg = msg.gamifyMsg;
-            delete msg.gamifyMsg;
-            
-            if( req.session.passport.user.name ){
-              gamifyMsg = gamifyMsg.replace(/DISPLAY_NAME/g, req.session.passport.user.name);
-            }
-            gamifyMsg = gamifyMsg.replace(/NUMBER/g, num);
-            gamifyMsg = gamifyMsg.replace(/GAME_LEVEL/g, game.level);
-            gamifyMsg = gamifyMsg.replace(/GAME_IMAGE/g, game.img);
-          }
-          if( msg.redirect_uri && !(/^http.?:\/\//.test(msg.redirect_uri)) ){
-            msg.redirect_uri = settings.app.hostname + msg.redirect_uri;
-          }
-          if( !msg.app_id ){
-            msg.app_id = settings.facebook.appId;
-          }
-          if( !msg.display ){
-            msg.display = 'popup';
-          }
-          
-          return res.send({success: true, deletes: total, picture: game.img, message: gamifyMsg, sharemsg: msg});
-        }
-      );
-    });
-  }
+    );
+  });
 });
 
 
@@ -1244,7 +1221,7 @@ app.get('/fb/logdeletes/:num', function (req, res) {
 var port = process.argv[2] || 3000;
 
 if (settings.app.emailNotify) {
-  var subject = 'KickassAuth Friend Remover Starting up daemon. Port ' + port;
+  var subject = 'Starting up daemon. Port ' + port;
   var text = 'Just a friendly notice.';
   SendMailWithRetry(subject, text, 3);
 }

@@ -1,37 +1,38 @@
 {
   "development": {
     "app": {
-      "hostname": "http://auth2.friend-manager.com",
+      "hostname": "http://auth.friend-manager.com",
       "db": "mongodb://localhost/kickassdev",
       "logging": {
         "loggers": {
           "console": {}
-        },
+        },          
         "level": "debug",
         "enabled": ["console"],
         "accessLogs": true,
         "serverId": "development"
       },
       "showDebugInfo": true,
-      "stats": "5398cada8c29d0f1ddb714b1",
+      "stats": "stats",
       "emailNotify": false,
+      "emailSubject": "FriendManager Auth",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
     },
     "google": {
       "host": "checkout.google.com",
-      "merchant_id": "00505787471191315094",
+      "merchant_id": "973944726093027",
       "merchant_key": "2ljzk3I_ojhpPY2GJ3M9kA",
       "api_path": "/api/checkout/v2/",
-      "appId": "957844751549-uiqtfpuoa5415p5ups8pldp19vp72spf.apps.googleusercontent.com",
-      "appSecret": "BJvKbKl2TdVY63HTcqyvODCR",
-      "callbackURI": "http://auth2.friend-manager.com/auth/google/callback",
-      "returnURL": "http://auth2.friend-manager.com/auth/google/callback",
-      "realm": "http://auth2.friend-manager.com/"
+      "appId": "957844751549-tbud87d9jgu9dam9at6fslt6mii52b7c.apps.googleusercontent.com",
+      "appSecret": "yoMiBYPN9tD9zajne0S-_mUa",
+      "callbackURI": "http://auth.friend-manager.com/auth/google/callback",
+      "returnURL": "http://auth.friend-manager.com/auth/google/callback",
+      "realm": "http://auth.friend-manager.com/"
     },
     "facebook": {
-      "appId": "503672426336852",
-      "appSecret": "82a5496e1ede78849fc40be1b3ed0fe0",
-      "callbackURI": "http://auth2.friend-manager.com/auth/facebook/callback"
+      "appId": "102524159894085",
+      "appSecret": "efde85423fb4060b3478db1f4c65dbe2",
+      "callbackURI": "http://auth.friend-manager.com/auth/facebook/callback"
     },
     "paypal": {
     	"api": {
@@ -40,19 +41,19 @@
 				"client_id" : "Aa4H9xCNt2YUEJSSeeh1lHx-AcgZzpt7HnZYg-4CzAAb1ZORltvoM4NfZUH0",
 				"client_secret" : "EI_YjBBCrfD8RIBgX0RT9MYEBqNk7gfi5Y14QXFtHzNkuSiO48FgyNUb7TgD"
     	},
-		"intent": "sale",
-		"method": "paypal",
-		"currency": "USD",
-		"host": "auth2.friend-manager.com",
-		"port": "80",
-		"returnPath": "paypalSuccess",
-		"cancelPath": "payment/gateways"
+      "intent": "sale",
+      "method": "paypal",
+      "currency": "USD",
+      "host": "auth.friend-manager.com",
+      "port": "80",
+      "returnPath": "paypalSuccess",
+      "cancelPath": "payment/gateways"
     },
     "tco": {
       "sandbox": false,
       "sellerId": "202194488",
       "secretWord": "AnT77SGyhJaSecwG",
-      "host": "auth2.friend-manager.com",
+      "host": "auth.friend-manager.com",
       "port": "80",
       "returnPath": "notify/2co",
       "demo": true,
@@ -69,20 +70,21 @@
   },
   "production": {
     "app": {
-      "hostname": "http://auth2.friend-manager.com",
+      "hostname": "http://auth.friend-manager.com",
       "db": "mongodb://localhost/kickass",
       "logging": {
         "loggers": {
           "console": {}
-        },
+        },          
         "level": "info",
         "enabled": ["console"],
         "accessLogs": false,
         "serverId": "production"
       },
       "showDebugInfo": false,
-      "stats": "5398cada8c29d0f1ddb714b1",
+      "stats": "stats",
       "emailNotify": true,
+      "emailSubject": "FriendManager Auth",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
     },
     "google": {
@@ -92,14 +94,14 @@
       "api_path": "/api/checkout/v2/",
       "appId": "957844751549-uiqtfpuoa5415p5ups8pldp19vp72spf.apps.googleusercontent.com",
       "appSecret": "BJvKbKl2TdVY63HTcqyvODCR",
-      "callbackURI": "http://auth2.friend-manager.com/auth/google/callback",
-      "returnURL": "http://auth2.friend-manager.com/auth/google/callback",
-      "realm": "http://auth2.friend-manager.com/"
+      "callbackURI": "http://auth.friend-manager.com/auth/google/callback",
+      "returnURL": "http://auth.friend-manager.com/auth/google/callback",
+      "realm": "http://auth.friend-manager.com/"
     },
     "facebook": {
-      "appId": "503672426336852",
-      "appSecret": "82a5496e1ede78849fc40be1b3ed0fe0",
-      "callbackURI": "http://auth2.friend-manager.com/auth/facebook/callback"
+      "appId": "102524159894085",
+      "appSecret": "efde85423fb4060b3478db1f4c65dbe2",
+      "callbackURI": "http://auth.friend-manager.com/auth/facebook/callback"
     },
     "paypal": {
     	"api": {
@@ -108,19 +110,19 @@
 				"client_id" : "AfoM1xC9D01RD8dqhbIAHVhrSTbTqDZSt21XGy-5Ez2XQDq_dbEwjqWC3L-5",
 				"client_secret" : "EB5gRBBE7ebjvitv3EmRkhPjVc2ZvJL8B9A2Odh5oQtFKqsMs-dZLPOX0Vfe"
     	},
-		"intent": "sale",
-		"method": "paypal",
-		"currency": "USD",
-		"host": "auth2.friend-manager.com",
-		"port": "80",
-		"returnPath": "paypalSuccess",
-		"cancelPath": "payment/gateways"
+      "intent": "sale",
+      "method": "paypal",
+      "currency": "USD",
+      "host": "auth.friend-manager.com",
+      "port": "80",
+      "returnPath": "paypalSuccess",
+      "cancelPath": "payment/gateways"
     },
     "tco": {
       "sandbox": false,
       "sellerId": "202194488",
       "secretWord": "AnT77SGyhJaSecwG",
-      "host": "auth2.friend-manager.com",
+      "host": "auth.friend-manager.com",
       "port": "80",
       "returnPath": "notify/2co",
       "demo": false,

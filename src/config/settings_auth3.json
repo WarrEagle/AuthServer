@@ -15,6 +15,7 @@
       "showDebugInfo": true,
       "stats": "stats",
       "emailNotify": false,
+      "emailSubject": "FriendManagerTest Auth3",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
     },
     "google": {
@@ -83,6 +84,7 @@
       "showDebugInfo": false,
       "stats": "stats",
       "emailNotify": true,
+      "emailSubject": "FriendManagerTest Auth3",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
     },
     "google": {

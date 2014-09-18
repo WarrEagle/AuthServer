@@ -15,6 +15,7 @@
       "showDebugInfo": true,
       "stats": "5398cada8c29d0f1ddb714b1",
       "emailNotify": false,
+      "emailSubject": "FriendRemover Auth2",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
     },
     "google": {
@@ -83,6 +84,7 @@
       "showDebugInfo": false,
       "stats": "5398cada8c29d0f1ddb714b1",
       "emailNotify": true,
+      "emailSubject": "FriendRemover Auth2",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
     },
     "google": {
