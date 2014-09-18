@@ -2,7 +2,7 @@
   "development": {
     "app": {
       "hostname": "http://auth3.friend-manager.com",
-      "db": "mongodb://localhost/kickassdev",
+      "db": "mongodb://localhost/kickass",
       "logging": {
         "loggers": {
           "console": {}
@@ -50,13 +50,13 @@
       "cancelPath": "payment/gateways"
     },
     "tco": {
-      "sandbox": false,
-      "sellerId": "202194488",
-      "secretWord": "AnT77SGyhJaSecwG",
+      "sandbox": true,
+      "sellerId": "901254543",
+      "secretWord": "tango",
       "host": "auth3.friend-manager.com",
       "port": "80",
       "returnPath": "notify/2co",
-      "demo": true,
+      "demo": false,
       "currency": "USD",
       "mode": "2CO"
     },
