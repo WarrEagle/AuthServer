@@ -9,7 +9,6 @@ var RedisStore          = require('connect-redis')(express);
 var rest                = require('restler');
 var _                   = require('underscore');
 var depRegistrar        = require('./registrars/dependencyRegistrar');
-var google              = require('./lib/google');
 var settings            = require('./lib/settings');
 var loggerService       = require('./services/logger').create(settings.app.logging);
 var async               = require('async');
@@ -46,22 +45,14 @@ var transport;
 if (settings.app.emailNotify) {
   transport = nodemailer.createTransport(
     'SMTP', 
-    {
-      host: 'kickasschromeapps.com',
-      secureConnection: false,
-      port: 25,
-      auth: {
-        user: 'no-reply@kickasschromeapps.com',
-        pass: 'getin2it'
-      }
-    }
+    settings.app.emailTransport
   );
 }
 
 
 function SendMailWithRetry(subject, content, retriesLeft) {
   transport.sendMail({
-    from: 'no-reply@kickasschromeapps.com',
+    from: settings.app.emailTransport.auth.user,
     to: settings.app.email,
     subject: '[' + settings.app.emailSubject + '] ' + subject,
     text: content
@@ -403,7 +394,7 @@ app.get('/auth/google',
 
 app.get('/auth/facebook', passport.authenticate('facebook', { display: 'popup', scope: ['email', 'user_friends'] } ));
 app.get('/auth/facebook/callback', 
-   passport.authenticate('facebook', { failureRedirect: '/auth/providers' }),
+  passport.authenticate('facebook', { failureRedirect: '/auth/providers' }),
   function(req, res) {
     // Successful authentication, redirect home.
     res.redirect('/postauth');

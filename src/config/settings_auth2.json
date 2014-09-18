@@ -16,7 +16,16 @@
       "stats": "5398cada8c29d0f1ddb714b1",
       "emailNotify": false,
       "emailSubject": "FriendRemover Auth2",
-      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
+      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
+      "emailTransport": {
+        "host": "kickasschromeapps.com",
+        "secureConnection": false,
+        "port": 25,
+        "auth": {
+          "user": "no-reply@kickasschromeapps.com",
+          "pass": "getin2it"
+        }
+      }
     },
     "google": {
       "host": "checkout.google.com",
@@ -85,7 +94,16 @@
       "stats": "5398cada8c29d0f1ddb714b1",
       "emailNotify": true,
       "emailSubject": "FriendRemover Auth2",
-      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
+      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
+      "emailTransport": {
+        "host": "kickasschromeapps.com",
+        "secureConnection": false,
+        "port": 25,
+        "auth": {
+          "user": "no-reply@kickasschromeapps.com",
+          "pass": "getin2it"
+        }
+      }
     },
     "google": {
       "host": "checkout.google.com",

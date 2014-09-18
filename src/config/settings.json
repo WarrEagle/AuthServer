@@ -16,7 +16,16 @@
       "stats": "stats",
       "emailNotify": false,
       "emailSubject": "FriendManager Auth",
-      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
+      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
+      "emailTransport": {
+        "host": "kickasschromeapps.com",
+        "secureConnection": false,
+        "port": 25,
+        "auth": {
+          "user": "no-reply@kickasschromeapps.com",
+          "pass": "getin2it"
+        }
+      }
     },
     "google": {
       "host": "checkout.google.com",
@@ -85,7 +94,16 @@
       "stats": "stats",
       "emailNotify": true,
       "emailSubject": "FriendManager Auth",
-      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com"
+      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
+      "emailTransport": {
+        "host": "kickasschromeapps.com",
+        "secureConnection": false,
+        "port": 25,
+        "auth": {
+          "user": "no-reply@kickasschromeapps.com",
+          "pass": "getin2it"
+        }
+      }
     },
     "google": {
       "host": "checkout.google.com",
