@@ -1,29 +1,79 @@
 #!/bin/bash
+#
+# Our service script for running the JWTPay application and Node.js process
+# using Forever as the process monitor. For more configuration options associated with Forever,
+# see: https://github.com/nodejitsu/forever
 
-NAME="jwtpay"
-DESC="jwtpay server via forever"
-JWTPAY=/opt/kickass
+
+NAME="JWTPay"
+DESC="JWTPay server via forever"
+JWTPAY="/opt/kickass"
+NODE_BIN_DIR="/usr/bin/nodejs"
+NODE_PATH="/usr/lib/node_modules"
+APPLICATION_PATH="/opt/kickass/src/jwtpay.js"
+PIDFILE="/var/run/jwtpay.pid"
+LOGFILE="/opt/kickass/log/jwtpay/jwtpay.log"
+MIN_UPTIME="3000"
+SPIN_SLEEP_TIME="2000"
+
+# Add node to the path for situations in which the environment is passed.
+PATH=$NODE_BIN_DIR:$PATH
+# Export all environment variables that must be visible for the Node.js
+# application process forked by Forever. It will not see any of the other
+# variables defined in this script.
+export NODE_PATH=$NODE_PATH
 
 do_start() {
-	echo "Starting $DESC"
-	export NODE_ENV=production
-	forever -w --watchDirectory /opt/kickass/src /opt/kickass/src/jwtpay.js >> /opt/kickass/log/jwtpay/jwtpay.log 2>&1 &
+        echo "Starting $DESC"
+        export NODE_ENV=production
+        forever --pidFile $PIDFILE -a -l $LOGFILE --minUptime $MIN_UPTIME --spinSleepTime $SPIN_SLEEP_TIME  start $APPLICATION_PATH 2>&1 > /dev/null & RETVAL=$?
 }
 
+do_devstart() {
+        echo "Starting $DESC"
+        export NODE_ENV=development
+        forever -d --pidFile $PIDFILE -a -l $LOGFILE --minUptime $MIN_UPTIME --spinSleepTime $SPIN_SLEEP_TIME  start $APPLICATION_PATH 2>&1 $
+}
 
-
+stop() {
+    if [ -f $PIDFILE ]; then
+        echo "Shutting down $NAME"
+        # Tell Forever to stop the process.
+        forever stop $APPLICATION_PATH 2>&1 > /dev/null
+        # Get rid of the pidfile, since Forever won't do that.
+        rm -f $PIDFILE
+        RETVAL=$?
+    else
+        echo "$NAME is not running."
+        RETVAL=0
+    fi
+}
 
 
 cd $JWTPAY/src
 case "$1" in
-	start)
-		do_start
-		;;
-	restart)
-		su -c 'forever stop 0'
-		do_start
-		;;
-	stop)
-		su -c 'forever stop 0'
-		;;
+        start)
+                do_start
+                ;;
+        pro)
+                stop
+                do_start
+                ;;
+        restart)
+                stop
+                do_start
+                ;;
+        stop)
+                stop
+                ;;
+        dev)
+                stop
+                do_devstart
+                ;;
+        *)
+                echo "Usage: {start|pro(start prod server)|dev (restart in dev mode)|stop (stop server(s)}"
+                exit 1
+                ;;
 esac
+exit $RETVAL
+
