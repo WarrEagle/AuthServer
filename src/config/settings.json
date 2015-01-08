@@ -18,12 +18,10 @@
       "emailSubject": "FriendManager Auth",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
       "emailTransport": {
-        "host": "kickasschromeapps.com",
-        "secureConnection": false,
-        "port": 25,
+        "service": "Gmail",
         "auth": {
-          "user": "no-reply@kickasschromeapps.com",
-          "pass": "getin2it"
+          "user": "misoquale@gmail.com",
+          "pass": "67life4me"
         }
       }
     },
@@ -96,12 +94,10 @@
       "emailSubject": "FriendManager Auth",
       "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
       "emailTransport": {
-        "host": "kickasschromeapps.com",
-        "secureConnection": false,
-        "port": 25,
+        "service": "Gmail",
         "auth": {
-          "user": "no-reply@kickasschromeapps.com",
-          "pass": "getin2it"
+          "user": "misoquale@gmail.com",
+          "pass": "67life4me"
         }
       }
     },

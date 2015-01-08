@@ -6,7 +6,9 @@ server {
   listen   80;
   server_name  newauth;
   server_tokens off;
-
+  limit_conn conn_limit_per_ip 10;
+  limit_req zone=req_limit_per_ip burst=40 nodelay;
+  limit_req zone=two burst=40 nodelay;
   root /opt/kickass/jwtpay/public;
   access_log /var/log/nginx/access.log;
 
