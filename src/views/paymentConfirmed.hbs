@@ -1,57 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Thank you for your order! Payment Confirmed</title>
-<meta name="description" content="">
-<meta name="keywords" content="">
-<link rel="stylesheet" type="text/css" href="/stylesheets/bootstrap.min.css" /> 
-<link rel="stylesheet" type="text/css" href="/stylesheets/style.css" /> 
-<link rel="icon" type="image/png" href="/images/favicon.ico" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>{{i18n "thx for order"}}</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" />
+    <link rel="icon" type="image/png" href="/images/favicon.ico" />
 </head>
-<body> 
-  <div class="content hero-unit container">
-    <h3>Payment Confirmed</h3>
+<body>
+<div class="content hero-unit container">
+    <h3>{{i18n "payment confirmed"}}</h3>
     <p>
-    	Hi {{payerName}},
-    	Your order was completed successfully. Close this window, Refresh your Facebook session and click the Invite All button! 
+        {{{i18n "next instructions" payerName}}}
     </p>
     <table id='transactionData' class="table table-striped table-bordered table-condensed">
-    	<tr>
-    		<td>Transaction Id:</td><td>{{transaction.id}}</td>
-    	</tr>
-    	<tr>
-    		<td>Transaction Type:</td><td>{{transaction.type}}</td>
-    	</tr>
-    	<tr>
-    		<td>Payment Type:</td><td>{{transaction.paymentType}}</td>
-    	</tr>
-    	<tr>
-    		<td>Order Time:</td><td>{{transaction.orderTime}}</td>
-    	</tr>
-    	<tr>
-    		<td>Amount:</td><td>{{transaction.amount}}</td>
-    	</tr>
-    	<tr>
-    		<td>Currency Code:</td><td>{{transaction.currencyCode}}</td>
-    	</tr>
-    	<tr>
-    		<td>Tax amount:</td><td>{{transaction.taxAmount}}</td>
-    	</tr>
-    	<tr>
-    		<td>Payment Status:</td><td>{{transaction.paymentStatus}}</td>
-    	</tr>
+        <tr>
+            <td>{{i18n "transaction id"}}:</td><td>{{transaction.id}}</td>
+        </tr>
+        <tr>
+            <td>{{i18n "transaction type"}}:</td><td>{{transaction.type}}</td>
+        </tr>
+        <tr>
+            <td>{{i18n "payment type"}}:</td><td>{{transaction.paymentType}}</td>
+        </tr>
+        <tr>
+            <td>{{i18n "order time"}}:</td><td>{{transaction.orderTime}}</td>
+        </tr>
+        <tr>
+            <td>{{i18n "amount"}}:</td><td>{{transaction.amount}}</td>
+        </tr>
+        <tr>
+            <td>{{i18n "currency"}}:</td><td>{{transaction.currencyCode}}</td>
+        </tr>
+        <tr>
+            <td>{{i18n "tax"}}:</td><td>{{transaction.taxAmount}}</td>
+        </tr>
+        <tr>
+            <td>{{i18n "status"}}:</td><td>{{transaction.paymentStatus}}</td>
+        </tr>
     </table>
-  </div>
+</div>
 </body>
 <script>
- (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
- (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
- m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
- })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
- ga('create', 'UA-42859587-1', 'friend-manager.com');
- ga('send', 'pageview');
+    ga('create', 'UA-42859587-1', 'friend-manager.com');
+    ga('send', 'pageview');
 
 </script>
 </html>

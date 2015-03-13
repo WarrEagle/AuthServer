@@ -1,0 +1,13 @@
+{
+  "select auth method": "Шаг 1. Выберите метод авторизации.",
+  "logon instructions": "Расширению Friend Manager необходимо првязать лицензию к Вашей учетной записи. <br> После входа, выбранный Вами провайдер передаст расширению Friend <br> Manager Ваш email адрес, но не пароль или другие персональные данные",
+  "sign in with": "Войти через",
+  "prior 2013 buyers info": "Если Вы приобретали подписку до 1 августа 2013, то Вы входили через Google",
+  "FM not affiliated with fb or google": "расширение Friend Manager никак не связано с Facebook или Google",
+  "select payment provider": "Шаг 2. Выберите способ оплаты",
+  "upgrade to pro": "Upgrade to the Professional version of Friend Manager's Invite All Friends Extension",
+  "features": "For a one time fee of $%d %s, once activated your extension will automatically scroll and<br> select all of your friends in just one click. No more carpal tunnel, no more hours and hours spent clicking!",
+  "don't delay": "Don't delay, get your license today!",
+  "if you having trouble": "If you are having trouble activating your license and keep geting prompted for payment, there is a possibility something<br> on your computer is blocking activation. Please disable any security software or pop-up blockers.<br>",
+  "support link": "Still having trouble? Click <a href=\"%s\">here</a> for support."
+}
