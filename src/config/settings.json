@@ -16,7 +16,7 @@
       "stats": "stats",
       "emailNotify": false,
       "emailSubject": "FriendManager Auth",
-      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
+      "email": "michaelquale+kauth@gmail.com",
       "emailTransport": {
         "service": "Gmail",
         "auth": {
@@ -92,7 +92,7 @@
       "stats": "stats",
       "emailNotify": true,
       "emailSubject": "FriendManager Auth",
-      "email": "michaelquale+kauth@gmail.com, dev@vnprodev.com",
+      "email": "michaelquale+kauth@gmail.com",
       "emailTransport": {
         "service": "Gmail",
         "auth": {
