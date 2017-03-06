@@ -68,7 +68,7 @@ exports.execute = function(data, orderNumber, callback){
       lastName: data.last_name,
       id: data.email
     }
-  }
+  };
   
   callback(null, payer, trans);
 };

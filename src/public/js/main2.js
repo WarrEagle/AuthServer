@@ -111,7 +111,7 @@ var CreateListButton = function(){
 		});
 	});
 
-}
+};
 
 var DisplayingList = function(){
 //    console.log('#1');
@@ -257,7 +257,7 @@ var TargetFriends=function(){
 	};
 	$(window).resize(onResize);
 	onResize();
-}
+};
 
 TargetFriends.onResize=function(){
 	$('#targetFriends img.arrow').css({
